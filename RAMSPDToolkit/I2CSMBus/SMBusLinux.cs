@@ -12,10 +12,14 @@
 using RAMSPDToolkit.I2CSMBus.Interop;
 using RAMSPDToolkit.I2CSMBus.Interop.Intel;
 using RAMSPDToolkit.I2CSMBus.Interop.Linux;
+using RAMSPDToolkit.I2CSMBus.Interop.Shared;
 using RAMSPDToolkit.Logging;
 using RAMSPDToolkit.PCI;
+using RAMSPDToolkit.PCI.Linux;
 using System.Runtime.InteropServices;
 using System.Text;
+
+using OS = RAMSPDToolkit.Software.OperatingSystem;
 
 namespace RAMSPDToolkit.I2CSMBus
 {
@@ -26,9 +30,33 @@ namespace RAMSPDToolkit.I2CSMBus
     {
         #region Constructor
 
-        SMBusLinux()
+        SMBusLinux(string pciConfigPath)
         {
+            if (!OS.IsLinux())
+            {
+                throw new PlatformNotSupportedException();
+            }
+
+            _PCIConfigPath = pciConfigPath;
+
+            _PCICMDOriginal = PCIConfigAccessor.ReadPCIConfig(_PCIConfigPath, SharedConstants.PCICMD);
+
+            LogSimple.LogTrace($"{nameof(SMBusLinux)}: PCICMD is 0x{_PCICMDOriginal:X4} ({_PCICMDOriginal}).");
         }
+
+        #endregion
+
+        #region Fields
+
+        /// <summary>
+        /// PCI config path of the SMBus controller. Used for PCICMD modifications.
+        /// </summary>
+        readonly string _PCIConfigPath;
+
+        /// <summary>
+        /// Initial value of the PCI Command Register (PCICMD) for this SMBus controller.
+        /// </summary>
+        readonly ushort _PCICMDOriginal;
 
         #endregion
 
@@ -36,58 +64,68 @@ namespace RAMSPDToolkit.I2CSMBus
 
         protected override int I2CSMBusXfer(byte addr, byte read_write, byte command, int size, SMBusData data)
         {
-            using (var handle = new I2CDeviceHandle(DeviceName))
+            //Modify (if necessary) and restore PCICMD
+            using (var io = new PCICMDIOGuardLinux(_PCIConfigPath, _PCICMDOriginal))
             {
-                var temp = new I2CSMBusIOCTLData();
-
-                //Tell I2C host which slave address to transfer to
-                Libc.ioctl_byte(handle.Handle, LinuxConstants.I2C_SLAVE_FORCE, addr);
-
-                temp.ReadWrite = read_write;
-                temp.Command = command;
-                temp.Size = (uint)size;
-
-                if (data != null)
+                //Open SMBus
+                using (var handle = new I2CDeviceHandle(DeviceName))
                 {
-                    temp.Data = data.Pointer;
+                    var temp = new I2CSMBusIOCTLData();
+
+                    //Tell I2C host which slave address to transfer to
+                    Libc.ioctl_byte(handle.Handle, LinuxConstants.I2C_SLAVE_FORCE, addr);
+
+                    temp.ReadWrite = read_write;
+                    temp.Command = command;
+                    temp.Size = (uint)size;
+
+                    if (data != null)
+                    {
+                        temp.Data = data.Pointer;
+                    }
+
+                    var status = Libc.ioctl_data(handle.Handle, LinuxConstants.I2C_SMBUS, ref temp);
+
+                    return status;
                 }
-
-                var status = Libc.ioctl_data(handle.Handle, LinuxConstants.I2C_SMBUS, ref temp);
-
-                return status;
             }
         }
 
         protected override int I2CXfer(byte addr, byte read_write, int? size, byte[] data)
         {
-            using (var handle = new I2CDeviceHandle(DeviceName))
+            //Modify (if necessary) and restore PCICMD
+            using (var io = new PCICMDIOGuardLinux(_PCIConfigPath, _PCICMDOriginal))
             {
-                var rdwr = new I2CRdwrIOCTLData();
-                var msg = new I2CMsg();
-
-                msg.Structure.Address = addr;
-                msg.Structure.Flags = read_write;
-                msg.Structure.Length = (ushort)size.GetValueOrDefault();
-                msg.Buffer = new byte[msg.Structure.Length];
-
-                rdwr.Msgs = new I2CMsgStructure[1] { msg.Structure };
-                rdwr.NMsgs = 1;
-
-                var ret = Libc.ioctl_data_rdwr(handle.Handle, LinuxConstants.I2C_RDWR, ref rdwr);
-
-                msg.Structure = rdwr.Msgs[0];
-
-                /*-------------------------------------------------*\
-                | If operation was a read, copy read data and size  |
-                \*-------------------------------------------------*/
-                if (read_write == I2CConstants.I2C_SMBUS_READ)
+                //Open SMBus
+                using (var handle = new I2CDeviceHandle(DeviceName))
                 {
-                    // size = msg.Length;
+                    var rdwr = new I2CRdwrIOCTLData();
+                    var msg = new I2CMsg();
 
-                    Array.Copy(msg.Buffer, 0, data, 0, msg.Structure.Length);
+                    msg.Structure.Address = addr;
+                    msg.Structure.Flags = read_write;
+                    msg.Structure.Length = (ushort)size.GetValueOrDefault();
+                    msg.Buffer = new byte[msg.Structure.Length];
+
+                    rdwr.Msgs = new I2CMsgStructure[1] { msg.Structure };
+                    rdwr.NMsgs = 1;
+
+                    var ret = Libc.ioctl_data_rdwr(handle.Handle, LinuxConstants.I2C_RDWR, ref rdwr);
+
+                    msg.Structure = rdwr.Msgs[0];
+
+                    /*-------------------------------------------------*\
+                    | If operation was a read, copy read data and size  |
+                    \*-------------------------------------------------*/
+                    if (read_write == I2CConstants.I2C_SMBUS_READ)
+                    {
+                        // size = msg.Length;
+
+                        Array.Copy(msg.Buffer, 0, data, 0, msg.Structure.Length);
+                    }
+
+                    return ret;
                 }
-
-                return ret;
             }
         }
 
@@ -132,94 +170,102 @@ namespace RAMSPDToolkit.I2CSMBus
 
                     if (name.StartsWith(i2cStr))
                     {
-                        var deviceString = driverPath + name + "/name";
+                        var pciPath = driverPath + name;
 
-                        var fileDescriptor = Libc.open(deviceString, LinuxConstants.O_RDONLY);
-
-                        if (fileDescriptor != 0)
+                        //Resolve link
+                        if (entStruct.d_type == LinuxConstants.DT_LNK)
                         {
-                            if (Libc.read(fileDescriptor, buffer, (uint)buffer.Length) < 0)
-                            {
-                                LogSimple.LogWarn($"{nameof(SMBusLinux)}: Failed to read I2C device name.");
-                            }
-
-                            Libc.close(fileDescriptor);
-
-                            //Extract port ID
-                            ushort portID = ushort.MaxValue;
-                            var portStr = name.Substring(i2cStr.Length, name.Length - i2cStr.Length);
-
-                            portID = Convert.ToUInt16(portStr);
-
-                            //Get device path
-                            var path = driverPath + name;
-
-                            if (entStruct.d_type == LinuxConstants.DT_LNK)
-                            {
-                                var str = Libc.realpath(path, IntPtr.Zero);
-                                if (str == null)
-                                {
-                                    continue;
-                                }
-
-                                path = str + "/..";
-                            }
-                            else
-                            {
-                                path += "/device";
-                            }
-
-                            //Get PCI Vendor
-                            var pciVendor = GetPCIData(path + "/vendor");
-
-                            //Get PCI Device
-                            var pciDevice = GetPCIData(path + "/device");
-
-                            //Get PCI Subsystem Vendor
-                            var pciSubsystemVendor = GetPCIData(path + "/subsystem_vendor");
-
-                            //Get PCI Subsystem Device
-                            var pciSubsystemDevice = GetPCIData(path + "/subsystem_device");
-
-                            //Filter by vendor Intel and AMD, ignore others
-                            if (!LinuxConstants.AllowedVendorIDs.Contains(pciVendor))
+                            var str = Libc.realpath(pciPath, IntPtr.Zero);
+                            if (str == null)
                             {
                                 continue;
                             }
 
-                            if (!IsSMBusClass(path))
-                            {
-                                continue;
-                            }
-
-                            deviceString = "/dev/" + name;
-
-                            using (var handle = new I2CDeviceHandle(deviceString))
-                            {
-                                if (!handle.IsValid)
-                                {
-                                    LogSimple.LogTrace($"Could not open '{deviceString}'.");
-                                    ret = false;
-
-                                    continue;
-                                }
-
-                                var bus = new SMBusLinux();
-                                bus.DeviceName = deviceString;
-                                bus.PCIDevice = pciDevice;
-                                bus.PCIVendor = pciVendor;
-                                bus.PCISubsystemDevice = pciSubsystemDevice;
-                                bus.PCISubsystemVendor = pciSubsystemVendor;
-                                bus.PortID = portID;
-
-                                bus.HasSPDWriteProtection = CheckHasSPDWriteProtection(pciVendor, path);
-
-                                SMBusManager.AddSMBus(bus);
-                            }
+                            pciPath = str + "/..";
                         }
                         else
                         {
-                            ret = false;
+                            pciPath += "/device";
+                        }
+
+                        //Get PCI Vendor
+                        var pciVendor = GetPCIData(pciPath + "/vendor");
+
+                        //Get PCI Device
+                        var pciDevice = GetPCIData(pciPath + "/device");
+
+                        //Get PCI Subsystem Vendor
+                        var pciSubsystemVendor = GetPCIData(pciPath + "/subsystem_vendor");
+
+                        //Get PCI Subsystem Device
+                        var pciSubsystemDevice = GetPCIData(pciPath + "/subsystem_device");
+
+                        //Filter by vendor Intel and AMD, ignore others
+                        if (!LinuxConstants.AllowedVendorIDs.Contains(pciVendor))
+                        {
+                            continue;
+                        }
+
+                        //Check if we have SMBus
+                        if (!IsSMBusClass(pciPath))
+                        {
+                            continue;
+                        }
+
+                        //Read PCICMD
+                        var ioOriginal = PCIConfigAccessor.ReadPCIConfig(pciPath, SharedConstants.PCICMD);
+
+                        //Modify (if necessary) and restore PCICMD
+                        using (var io = new PCICMDIOGuardLinux(pciPath, ioOriginal))
+                        {
+                            var deviceString = driverPath + name + "/name";
+
+                            var fileDescriptor = Libc.open(deviceString, LinuxConstants.O_RDONLY);
+
+                            if (fileDescriptor != 0)
+                            {
+                                if (Libc.read(fileDescriptor, buffer, (uint)buffer.Length) < 0)
+                                {
+                                    LogSimple.LogWarn($"{nameof(SMBusLinux)}: Failed to read I2C device name.");
+                                }
+
+                                Libc.close(fileDescriptor);
+
+                                //Extract port ID
+                                ushort portID = ushort.MaxValue;
+                                var portStr = name.Substring(i2cStr.Length, name.Length - i2cStr.Length);
+
+                                portID = Convert.ToUInt16(portStr);
+
+                                deviceString = "/dev/" + name;
+
+                                using (var handle = new I2CDeviceHandle(deviceString))
+                                {
+                                    if (!handle.IsValid)
+                                    {
+                                        LogSimple.LogTrace($"Could not open '{deviceString}'.");
+                                        ret = false;
+
+                                        continue;
+                                    }
+
+                                    var bus = new SMBusLinux(pciPath);
+                                    bus.DeviceName = deviceString;
+                                    bus.PCIDevice = pciDevice;
+                                    bus.PCIVendor = pciVendor;
+                                    bus.PCISubsystemDevice = pciSubsystemDevice;
+                                    bus.PCISubsystemVendor = pciSubsystemVendor;
+                                    bus.PortID = portID;
+
+                                    bus.HasSPDWriteProtection = CheckHasSPDWriteProtection(pciVendor, pciPath);
+
+                                    SMBusManager.AddSMBus(bus);
+                                }
+                            }
+                            else
+                            {
+                                ret = false;
+                            }
                         }
                     }
                 }
@@ -298,20 +344,10 @@ namespace RAMSPDToolkit.I2CSMBus
                 return false;
             }
 
-            var buffer = new byte[1];
-
-            var pathConfig = pciDevicePath + "/config";
-            var fileDescriptor = Libc.open(pathConfig, LinuxConstants.O_RDONLY);
-
-            Libc.lseek(fileDescriptor, IntelConstants.SMBHSTCFG, LinuxConstants.SEEK_SET);
-
-            if (Libc.read(fileDescriptor, buffer, (uint)buffer.Length) < 0)
-            {
-                LogSimple.LogWarn($"{nameof(SMBusLinux)}: Failed to read host config.");
-            }
+            var hostConfig = PCIConfigAccessor.ReadPCIConfig(pciDevicePath, IntelConstants.SMBHSTCFG);
 
             //Check if write protection bit is set
-            return (buffer[0] & IntelConstants.SMBHSTCFG_SPD_WD) != 0;
+            return (hostConfig & IntelConstants.SMBHSTCFG_SPD_WD) != 0;
         }
 
         void CheckFuncs(int size)

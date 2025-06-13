@@ -54,6 +54,7 @@ static class Program
         {
             //Init OLS driver
             DriverManager.InitDriver(InternalDriver.OLS);
+
             //Check if OLS driver was initalized and could be loaded
             if (DriverManager.DriverImplementation == InternalDriver.OLS
              && DriverManager.Driver.Load())
