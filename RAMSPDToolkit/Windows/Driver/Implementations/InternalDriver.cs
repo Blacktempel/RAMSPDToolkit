@@ -9,6 +9,8 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
+#if !RELEASE_NDD
+
 namespace RAMSPDToolkit.Windows.Driver.Implementations
 {
     /// <summary>
@@ -28,3 +30,5 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations
         OLS,
     }
 }
+
+#endif

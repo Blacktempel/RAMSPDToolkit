@@ -13,11 +13,19 @@
     <RepositoryUrl>https://github.com/Blacktempel/RAMSPDToolkit</RepositoryUrl>
     <PackageTags>ram; spd; tookit; thermal; sensor; ram temperature; ram thermal data; thermal sensor; monitoring; system; i2c; smbus; intel; amd</PackageTags>
     <PackageLicenseExpression>MPL-2.0</PackageLicenseExpression>
-    <AssemblyVersion>1.0.2</AssemblyVersion>
-    <FileVersion>1.0.2</FileVersion>
+    <AssemblyVersion>1.1.0</AssemblyVersion>
+    <FileVersion>1.1.0</FileVersion>
     <PackageIcon>packageicon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Configurations>Debug;Release;Release_NDD</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' != 'Release_NDD'">
     <Version>$(AssemblyVersion)</Version>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release_NDD'">
+    <Version>$(AssemblyVersion)-NDD</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0|AnyCPU'">
@@ -32,8 +40,18 @@
     <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release_NDD|net8.0|AnyCPU'">
+    <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
+    <DefineConstants>$(DefineConstants);RELEASE_NDD</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net481|AnyCPU'">
     <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release_NDD|net481|AnyCPU'">
+    <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
+    <DefineConstants>$(DefineConstants);RELEASE_NDD</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net9.0|AnyCPU'">
@@ -44,12 +62,22 @@
     <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release_NDD|net9.0|AnyCPU'">
+    <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
+    <DefineConstants>$(DefineConstants);RELEASE_NDD</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net472|AnyCPU'">
     <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net472|AnyCPU'">
     <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release_NDD|net472|AnyCPU'">
+    <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
+    <DefineConstants>$(DefineConstants);RELEASE_NDD</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -59,7 +87,7 @@
     <None Remove="Resources\WinRing0x64.sys.gz" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' != 'Release_NDD'">
     <EmbeddedResource Include="Resources\WinRing0.dll.gz" />
     <EmbeddedResource Include="Resources\WinRing0.sys.gz" />
     <EmbeddedResource Include="Resources\WinRing0x64.dll.gz" />

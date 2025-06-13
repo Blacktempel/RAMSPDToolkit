@@ -50,13 +50,21 @@ jobs:
       run: dotnet restore
 
     # Create the app package by building and packaging the Windows Application Packaging project
-    - name: Build Windows
+    - name: Build Windows Release
       if: runner.os == 'Windows'
       run: msbuild $env:Solution_Name /p:Configuration=Release /p:Platform="Any CPU" -m
 
-    - name: Build Linux
+    - name: Build Windows Release_NDD
+      if: runner.os == 'Windows'
+      run: msbuild $env:Solution_Name /p:Configuration=Release_NDD /p:Platform="Any CPU" -m
+
+    - name: Build Linux Release
       if: runner.os == 'Linux'
       run: dotnet build --configuration Release --no-restore
+
+    - name: Build Linux Release_NDD
+      if: runner.os == 'Linux'
+      run: dotnet build --configuration Release_NDD --no-restore
 
     - name: Run Unit Tests
       run: dotnet test

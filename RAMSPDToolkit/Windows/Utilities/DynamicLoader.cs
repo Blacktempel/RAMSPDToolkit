@@ -9,10 +9,10 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
-using RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Interop;
+using RAMSPDToolkit.Windows.Interop;
 using System.Runtime.InteropServices;
 
-namespace RAMSPDToolkit.Windows.Driver.Implementations
+namespace RAMSPDToolkit.Windows.Utilities
 {
     /// <summary>
     /// Helper class for dynamic loading of native functions via <see cref="Kernel32.GetProcAddress(IntPtr, string)"/>.

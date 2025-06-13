@@ -10,9 +10,12 @@
 //
 // Code adjustments and additions by Florian K.
 
+#if !RELEASE_NDD
+
 using RAMSPDToolkit.Logging;
 using RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Enums;
-using RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Interop;
+using RAMSPDToolkit.Windows.Interop;
+using RAMSPDToolkit.Windows.Utilities;
 using System.Diagnostics;
 using System.IO.Compression;
 
@@ -713,3 +716,5 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
         #endregion
     }
 }
+
+#endif

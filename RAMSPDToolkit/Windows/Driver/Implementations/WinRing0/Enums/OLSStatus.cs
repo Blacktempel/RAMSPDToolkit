@@ -10,6 +10,8 @@
 //
 // Code adjustments and additions by Florian K.
 
+#if !RELEASE_NDD
+
 namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Enums
 {
     //For this support library
@@ -22,3 +24,5 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Enums
         DLL_RESOURCE_NOT_FOUND = 4,
     }
 }
+
+#endif

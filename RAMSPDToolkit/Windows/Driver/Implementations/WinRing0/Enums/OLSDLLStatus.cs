@@ -10,6 +10,8 @@
 //
 // Code adjustments and additions by Florian K.
 
+#if !RELEASE_NDD
+
 namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Enums
 {
     //For WinRing0
@@ -24,3 +26,5 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Enums
         OLS_DLL_UNKNOWN_ERROR                = 9,
     }
 }
+
+#endif

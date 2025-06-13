@@ -9,6 +9,8 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
+#if !RELEASE_NDD
+
 namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
 {
     internal static class OLSConstants
@@ -17,3 +19,5 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
         public const string DriverFileName64Bit = "WinRing0x64";
     }
 }
+
+#endif

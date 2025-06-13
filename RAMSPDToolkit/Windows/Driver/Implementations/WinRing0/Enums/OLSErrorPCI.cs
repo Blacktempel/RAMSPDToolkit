@@ -10,6 +10,8 @@
 //
 // Code adjustments and additions by Florian K.
 
+#if !RELEASE_NDD
+
 namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Enums
 {
     //For WinRing0
@@ -21,3 +23,5 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Enums
         OLS_ERROR_PCI_READ_CONFIG   = 0xE0000004,
     }
 }
+
+#endif

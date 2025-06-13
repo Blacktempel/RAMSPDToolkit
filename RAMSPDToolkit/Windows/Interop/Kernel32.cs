@@ -11,7 +11,7 @@
 
 using System.Runtime.InteropServices;
 
-namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Interop
+namespace RAMSPDToolkit.Windows.Interop
 {
     /// <summary>
     /// Imports of native functions via <see cref="DllImportAttribute"/>.

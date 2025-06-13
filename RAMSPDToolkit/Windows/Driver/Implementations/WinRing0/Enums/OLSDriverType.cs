@@ -10,6 +10,8 @@
 //
 // Code adjustments and additions by Florian K.
 
+#if !RELEASE_NDD
+
 namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Enums
 {
     //For WinRing0
@@ -23,3 +25,5 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Enums
         OLS_DRIVER_TYPE_WIN_NT_IA64 = 5,
     }
 }
+
+#endif
