@@ -61,6 +61,8 @@ namespace RAMSPDToolkit.I2CSMBus
         /// </summary>
         public static void DetectSMBuses()
         {
+            _RegisteredSMBuses.Clear();
+
             var smbusDetectMethods = new List<Func<bool>>();
 
             if (OS.IsWindows())
