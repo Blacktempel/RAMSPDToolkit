@@ -119,6 +119,11 @@ static class Program
 Some functionality requires administrator privileges to access the data.<br/>
 Consider adding a manifest file to your application and set ``requestedExecutionLevel`` to ``requireAdministrator``.
 
+### Can I use my own driver ?
+Yes, you can implement your own driver via our IDriver interface.<br/>
+You just have to assign an instance to RAMSPDToolkit and it will use your implementation instead.<br/>
+Please be sure to use a well tested driver.
+
 ## License
 RAMSPDToolkit is free and open source software licensed under MPL 2.0.<br/>
 You can use it in private and commercial projects.<br/>
