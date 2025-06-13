@@ -11,12 +11,12 @@
 
 using System.Runtime.InteropServices;
 
-namespace WinRing0Driver.Interop
+namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Interop
 {
     /// <summary>
     /// Imports of native functions via <see cref="DllImportAttribute"/>.
     /// </summary>
-    public static class Kernel32
+    internal static class Kernel32
     {
         const string DLL_NAME = "kernel32.dll";
 

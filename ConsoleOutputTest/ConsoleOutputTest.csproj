@@ -15,7 +15,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RAMSPDToolkit\RAMSPDToolkit.csproj" />
-    <ProjectReference Include="..\WinRing0Driver\WinRing0Driver.csproj" />
   </ItemGroup>
 
 </Project>

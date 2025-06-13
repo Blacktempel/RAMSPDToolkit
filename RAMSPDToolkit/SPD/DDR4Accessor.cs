@@ -156,7 +156,7 @@ namespace RAMSPDToolkit.SPD
             byte offset = (byte)(address & DDR4Constants.SPD_DDR4_EEPROM_PAGE_MASK);
 
             //Read value at address
-            RetryReadByteData(_Address, offset, SPDConstants.SPD_DATA_RETRIES, out var value);
+            RetryReadByteData(_Bus, _Address, offset, SPDConstants.SPD_DATA_RETRIES, out var value);
 
             Thread.Sleep(SPDConstants.SPD_IO_DELAY);
 
@@ -169,7 +169,7 @@ namespace RAMSPDToolkit.SPD
             //Set page to 0 to read volatile data
             SetPage(0);
 
-            var status = RetryReadWordDataSwapped(_ThermalSensorAddress, DDR4Constants.SPD_DDR4_TEMPERATURE_ADDRESS, SPDConstants.SPD_TS_RETRIES, out ushort temp);
+            var status = RetryReadWordDataSwapped(_Bus, _ThermalSensorAddress, DDR4Constants.SPD_DDR4_TEMPERATURE_ADDRESS, SPDConstants.SPD_TS_RETRIES, out ushort temp);
 
             temp = RawTemperatureAdjust(temp);
 
@@ -249,7 +249,7 @@ namespace RAMSPDToolkit.SPD
             ushort wordTemp;
 
             //Sensor Capabilities
-            var status = RetryReadWordDataSwapped(_ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CAPABILITIES_REGISTER, retries, out wordTemp);
+            var status = RetryReadWordDataSwapped(_Bus, _ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CAPABILITIES_REGISTER, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CAPABILITIES_REGISTER)} failed with status {status}.");
@@ -264,7 +264,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Sensor Configuration
-            status = RetryReadWordDataSwapped(_ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CONFIGURATION_REGISTER, retries, out wordTemp);
+            status = RetryReadWordDataSwapped(_Bus, _ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CONFIGURATION_REGISTER, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CONFIGURATION_REGISTER)} failed with status {status}.");
@@ -277,7 +277,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Sensor High Limit
-            status = RetryReadWordDataSwapped(_ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_HIGH_LIMIT, retries, out wordTemp);
+            status = RetryReadWordDataSwapped(_Bus, _ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_HIGH_LIMIT, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_HIGH_LIMIT)} failed with status {status}.");
@@ -292,7 +292,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Sensor Low Limit
-            status = RetryReadWordDataSwapped(_ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_LOW_LIMIT, retries, out wordTemp);
+            status = RetryReadWordDataSwapped(_Bus, _ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_LOW_LIMIT, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_LOW_LIMIT)} failed with status {status}.");
@@ -307,7 +307,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Sensor Critical Limit
-            status = RetryReadWordDataSwapped(_ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CRIT_LIMIT, retries, out wordTemp);
+            status = RetryReadWordDataSwapped(_Bus, _ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CRIT_LIMIT, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CRIT_LIMIT)} failed with status {status}.");
@@ -322,7 +322,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Sensor Manufacturer
-            status = RetryReadWordDataSwapped(_ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_MANUFACTURER, retries, out wordTemp);
+            status = RetryReadWordDataSwapped(_Bus, _ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_MANUFACTURER, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_MANUFACTURER)} failed with status {status}.");
@@ -335,7 +335,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Sensor DeviceID / Revision Register
-            status = RetryReadWordDataSwapped(_ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_DEVICEID, retries, out wordTemp);
+            status = RetryReadWordDataSwapped(_Bus, _ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_DEVICEID, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_DEVICEID)} failed with status {status}.");

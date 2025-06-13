@@ -13,10 +13,12 @@ using RAMSPDToolkit.I2CSMBus.Interop;
 using RAMSPDToolkit.I2CSMBus.Interop.Intel;
 using RAMSPDToolkit.I2CSMBus.Interop.Shared;
 using RAMSPDToolkit.Logging;
+using RAMSPDToolkit.Mutexes;
+using RAMSPDToolkit.PCI;
 using RAMSPDToolkit.Windows.Driver;
 using System.Text.RegularExpressions;
 
-using OS = WinRing0Driver.Utilities.OperatingSystem;
+using OS = RAMSPDToolkit.Software.OperatingSystem;
 
 namespace RAMSPDToolkit.I2CSMBus
 {
@@ -27,31 +29,33 @@ namespace RAMSPDToolkit.I2CSMBus
     {
         #region Constructor
 
-        SMBusI801()
+        SMBusI801(uint pciAddress)
         {
-            //Check for Windows
-            if (OS.IsWindows())
+            if (!OS.IsWindows())
             {
-                //Assume shared smbus access
-                _GlobalSMBusAccessHandle = Kernel32.CreateMutex(IntPtr.Zero, false, SharedConstants.GlobalSMBusMutexName);
+                throw new PlatformNotSupportedException();
             }
-        }
 
-        ~SMBusI801()
-        {
-            //Check for Windows
-            if (OS.IsWindows())
-            {
-                //Cleanup for Handle
-                Kernel32.CloseHandle(_GlobalSMBusAccessHandle);
-            }
+            _PCIAddress = pciAddress;
+
+            _PCICMDOriginal = DriverAccess.ReadPciConfigWord(_PCIAddress, SharedConstants.PCICMD);
+
+            LogSimple.LogTrace($"{nameof(SMBusI801)}: PCICMD is 0x{_PCICMDOriginal:X4} ({_PCICMDOriginal}).");
         }
 
         #endregion
 
         #region Fields
 
-        IntPtr _GlobalSMBusAccessHandle;
+        /// <summary>
+        /// PCI address of the SMBus controller. Used for PCICMD modifications.
+        /// </summary>
+        readonly uint _PCIAddress = PCIConstants.PCI_DEVICE_INVALID;
+
+        /// <summary>
+        /// Initial value of the PCI Command Register (PCICMD) for this SMBus controller.
+        /// </summary>
+        readonly ushort _PCICMDOriginal;
 
         #endregion
 
@@ -82,27 +86,21 @@ namespace RAMSPDToolkit.I2CSMBus
 
         protected override int I2CSMBusXfer(byte addr, byte read_write, byte command, int size, SMBusData data)
         {
-            //Check for Windows
-            if (OS.IsWindows())
+            //Lock SMBus mutex
+            using (var smbm = new WorldMutexGuard(WorldMutexManager.WorldSMBusMutex))
             {
-                if (_GlobalSMBusAccessHandle != IntPtr.Zero)
+                //Lock PCI mutex
+                using (var pci = new WorldMutexGuard(WorldMutexManager.WorldPCIMutex))
                 {
-                    Kernel32.WaitForSingleObject(_GlobalSMBusAccessHandle, I2CConstants.INFINITE_TIME);
+                    //Modify (if necessary) and restore PCICMD
+                    using (var io = new PCICMDIOGuard(_PCIAddress, _PCICMDOriginal))
+                    {
+                        var result = i801Access(addr, read_write, command, size, data);
+
+                        return result;
+                    }
                 }
             }
-
-            var result = i801Access(addr, read_write, command, size, data);
-
-            //Check for Windows
-            if (OS.IsWindows())
-            {
-                if (_GlobalSMBusAccessHandle != IntPtr.Zero)
-                {
-                    Kernel32.ReleaseMutex(_GlobalSMBusAccessHandle);
-                }
-            }
-
-            return result;
         }
 
         protected override int I2CXfer(byte addr, byte read_write, int? size, byte[] data)
@@ -194,6 +192,28 @@ namespace RAMSPDToolkit.I2CSMBus
 
         #endregion
 
+        #region Internal
+
+        internal static void Create(uint pciAddress, ushort smba, byte hostConfig, int vendor, int device, int subsysVendor, int subsysDevice, string deviceName)
+        {
+            var intelBus = new SMBusI801(pciAddress);
+            intelBus.PortID = SMBusManager.RegisteredSMBuses.Count; // Assign next available port ID
+            intelBus.PCIVendor = vendor;
+            intelBus.PCIDevice = device;
+            intelBus.PCISubsystemVendor = subsysVendor;
+            intelBus.PCISubsystemDevice = subsysDevice;
+            intelBus.DeviceName = deviceName;
+
+            intelBus.I801_SMBA = smba;
+
+            //Check if write protection is enabled
+            intelBus.HasSPDWriteProtection = (hostConfig & IntelConstants.SMBHSTCFG_SPD_WD) != 0;
+
+            SMBusManager.AddSMBus(intelBus);
+        }
+
+        #endregion
+
         #region Private
 
         static bool TryAddSMBus(Dictionary<string, string> item, uint ioRangeStart)
@@ -217,7 +237,7 @@ namespace RAMSPDToolkit.I2CSMBus
                 int sbdID = Convert.ToInt32(sbdStr, 16);
 
                 var pciAddress = DriverAccess.FindPciDeviceById((ushort)venID, (ushort)devID, 0);
-                if (pciAddress == I2CConstants.PCI_DEVICE_INVALID)
+                if (pciAddress == PCIConstants.PCI_DEVICE_INVALID)
                 {
                     return false;
                 }
@@ -228,20 +248,7 @@ namespace RAMSPDToolkit.I2CSMBus
                     return false;
                 }
 
-                var intelBus = new SMBusI801();
-                intelBus.PortID = SMBusManager.RegisteredSMBuses.Count; // Assign next available port ID
-                intelBus.PCIVendor = venID;
-                intelBus.PCIDevice = devID;
-                intelBus.PCISubsystemVendor = sbvID;
-                intelBus.PCISubsystemDevice = sbdID;
-                intelBus.DeviceName = item["Description"];
-
-                intelBus.I801_SMBA = (ushort)ioRangeStart;
-
-                //Check if write protection is enabled
-                intelBus.HasSPDWriteProtection = (hostConfig & IntelConstants.SMBHSTCFG_SPD_WD) != 0;
-
-                SMBusManager.AddSMBus(intelBus);
+                Create(pciAddress, (ushort)ioRangeStart, hostConfig, venID, devID, sbvID, sbdID, item["Description"]);
 
                 return true;
             }
@@ -251,6 +258,12 @@ namespace RAMSPDToolkit.I2CSMBus
 
         int i801Access(ushort addr, byte read_write, byte command, int size, SMBusData data)
         {
+            int busy = i801CheckPre();
+            if (busy < 0)
+            {
+                return busy;
+            }
+
             int hwpec = 0;
             int block = 0;
             int ret   = 0;
@@ -403,12 +416,6 @@ namespace RAMSPDToolkit.I2CSMBus
 
         int i801Transaction(int xact)
         {
-            var result = i801CheckPre();
-            if (result < 0)
-            {
-                return result;
-            }
-
             DriverAccess.WriteIoPortByte(SMBHSTCNT, (byte)(DriverAccess.ReadIoPortByte(SMBHSTCNT) & ~IntelConstants.SMBHSTCNT_INTREN));
 
             /* the current contents of SMBHSTCNT can be overwritten, since PEC,

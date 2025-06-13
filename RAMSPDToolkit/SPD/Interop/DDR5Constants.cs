@@ -13,6 +13,12 @@ namespace RAMSPDToolkit.SPD.Interop
 {
     internal sealed class DDR5Constants
     {
+        public const byte SPD_DDR5_DEVICE_TYPE_MOST  = 0x0;
+        public const byte SPD_DDR5_DEVICE_TYPE_LEAST = 0x1;
+
+        public const byte SPD_DDR5_DEVICE_TYPE_MOST_EXPECTED  = 0x51;
+        public const byte SPD_DDR5_DEVICE_TYPE_LEAST_EXPECTED = 0x18;
+
         public const ushort SPD_DDR5_EEPROM_LENGTH     = 2048;
         public const byte   SPD_DDR5_EEPROM_PAGE_SHIFT = 7;
         public const byte   SPD_DDR5_EEPROM_PAGE_MASK  = 0x7F;

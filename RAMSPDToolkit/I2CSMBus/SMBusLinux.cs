@@ -13,6 +13,7 @@ using RAMSPDToolkit.I2CSMBus.Interop;
 using RAMSPDToolkit.I2CSMBus.Interop.Intel;
 using RAMSPDToolkit.I2CSMBus.Interop.Linux;
 using RAMSPDToolkit.Logging;
+using RAMSPDToolkit.PCI;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -281,7 +282,7 @@ namespace RAMSPDToolkit.I2CSMBus
             }
 
             var classString = Encoding.UTF8.GetString(buffer);
-            if (!classString.StartsWith(LinuxConstants.SMBusClassID))
+            if (!classString.StartsWith(LinuxConstants.SMBusClassID, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
@@ -292,7 +293,7 @@ namespace RAMSPDToolkit.I2CSMBus
         static bool CheckHasSPDWriteProtection(ushort pciVendor, string pciDevicePath)
         {
             //Only Intel can have write protection bit set
-            if (pciVendor != I2CConstants.PCI_VENDOR_INTEL)
+            if (pciVendor != PCIConstants.PCI_VENDOR_INTEL)
             {
                 return false;
             }

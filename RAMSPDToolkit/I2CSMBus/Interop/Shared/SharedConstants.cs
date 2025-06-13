@@ -11,9 +11,9 @@
 
 namespace RAMSPDToolkit.I2CSMBus.Interop.Shared
 {
-    public class SharedConstants
+    public sealed class SharedConstants
     {
-        internal const string GlobalSMBusMutexName = "Global\\Access_SMBUS.HTP.Method";
+        internal const string SMBusMutexName = "Access_SMBUS.HTP.Method";
 
         public const int EIO        =   5; //I/O error
         public const int ENXIO      =   6; //No such device or address
@@ -27,5 +27,13 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.Shared
         public const int ETIMEDOUT  = 138; //Connection timed out
 
         internal const int MAX_RETRIES = 450;
+
+        /* PCI Address Constants */
+        public const int PCICMD = 0x04;
+
+        /// <summary>
+        /// Enables access to the SM Bus I/O space registers as defined by the Base Address Register.
+        /// </summary>
+        internal const byte PCI_CMD_IO_BIT = 0x01;
     }
 }

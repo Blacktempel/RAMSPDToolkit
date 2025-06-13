@@ -10,18 +10,18 @@
 //
 // Code adjustments and additions by Florian K.
 
+using RAMSPDToolkit.Logging;
+using RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Enums;
+using RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Interop;
 using System.Diagnostics;
 using System.IO.Compression;
-using WinRing0Driver.Driver.Enums;
-using WinRing0Driver.Interop;
-using WinRing0Driver.Utilities;
 
-namespace WinRing0Driver.Driver
+namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
 {
     /// <summary>
     /// Driver access class. Extracts driver and handles driver interaction.
     /// </summary>
-    public class OLS : IDisposable
+    internal sealed class OLS : IDisposable, IDriver
     {
         #region Constructor
 
@@ -29,17 +29,20 @@ namespace WinRing0Driver.Driver
         {
             if (!ExtractDriver())
             {
+                LogSimple.LogError($"{nameof(ExtractDriver)} failed - OLS Status {_Status}.");
                 return;
             }
 
             if (!LoadLibraryFunctions())
             {
+                LogSimple.LogError($"{nameof(LoadLibraryFunctions)} failed - OLS Status {_Status}.");
                 return;
             }
 
             if (InitializeOls() == 0)
             {
                 _Status = OLSStatus.DLL_INITIALIZE_ERROR;
+                LogSimple.LogError($"{nameof(InitializeOls)} failed - OLS Status {_Status} | DLL Status {GetDllStatus()}.");
             }
         }
 
@@ -271,13 +274,152 @@ namespace WinRing0Driver.Driver
 
         #endregion
 
-        #region Public
+        #region IDriver
 
-        // Bus Number, Device Number and Function Number to PCI Device Address
-        public uint PciBusDevFunc(uint bus, uint dev, uint func)
+        bool IDriver.Load()
         {
-            return ((bus & 0xFF) << 8) | ((dev & 0x1F) << 3) | (func & 7);
+            return OLSStatus == OLSStatus.NO_ERROR
+                && GetDllStatus() == 0;
         }
+
+        void IDriver.Unload()
+        {
+            Dispose();
+        }
+
+        byte IDriver.ReadIoPortByte(ushort port)
+        {
+            return ReadIoPortByte(port);
+        }
+
+        ushort IDriver.ReadIoPortWord(ushort port)
+        {
+            return ReadIoPortWord(port);
+        }
+
+        uint IDriver.ReadIoPortDword(ushort port)
+        {
+            return ReadIoPortDword(port);
+        }
+
+        int IDriver.ReadIoPortByteEx(ushort port, ref byte value)
+        {
+            return ReadIoPortByteEx(port, ref value);
+        }
+
+        int IDriver.ReadIoPortWordEx(ushort port, ref ushort value)
+        {
+            return ReadIoPortWordEx(port, ref value);
+        }
+
+        int IDriver.ReadIoPortDwordEx(ushort port, ref uint value)
+        {
+            return ReadIoPortDwordEx(port, ref value);
+        }
+
+        void IDriver.WriteIoPortByte(ushort port, byte value)
+        {
+            WriteIoPortByte(port, value);
+        }
+
+        void IDriver.WriteIoPortWord(ushort port, ushort value)
+        {
+            WriteIoPortWord(port, value);
+        }
+
+        void IDriver.WriteIoPortDword(ushort port, uint value)
+        {
+            WriteIoPortDword(port, value);
+        }
+
+        int IDriver.WriteIoPortByteEx(ushort port, byte value)
+        {
+            return WriteIoPortByteEx(port, value);
+        }
+
+        int IDriver.WriteIoPortWordEx(ushort port, ushort value)
+        {
+            return WriteIoPortWordEx(port, value);
+        }
+
+        int IDriver.WriteIoPortDwordEx(ushort port, uint value)
+        {
+            return WriteIoPortDwordEx(port, value);
+        }
+
+        uint IDriver.FindPciDeviceById(ushort vendorId, ushort deviceId, byte index)
+        {
+            return FindPciDeviceById(vendorId, deviceId, index);
+        }
+
+        uint IDriver.FindPciDeviceByClass(byte baseClass, byte subClass, byte programIf, byte index)
+        {
+            return FindPciDeviceByClass(baseClass, subClass, programIf, index);
+        }
+
+        byte IDriver.ReadPciConfigByte(uint pciAddress, byte regAddress)
+        {
+            return ReadPciConfigByte(pciAddress, regAddress);
+        }
+
+        ushort IDriver.ReadPciConfigWord(uint pciAddress, byte regAddress)
+        {
+            return ReadPciConfigWord(pciAddress, regAddress);
+        }
+
+        uint IDriver.ReadPciConfigDword(uint pciAddress, byte regAddress)
+        {
+            return ReadPciConfigDword(pciAddress, regAddress);
+        }
+
+        int IDriver.ReadPciConfigByteEx(uint pciAddress, uint regAddress, ref byte value)
+        {
+            return ReadPciConfigByteEx(pciAddress, regAddress, ref value);
+        }
+
+        int IDriver.ReadPciConfigWordEx(uint pciAddress, uint regAddress, ref ushort value)
+        {
+            return ReadPciConfigWordEx(pciAddress, regAddress, ref value);
+        }
+
+        int IDriver.ReadPciConfigDwordEx(uint pciAddress, uint regAddress, ref uint value)
+        {
+            return ReadPciConfigDwordEx(pciAddress, regAddress, ref value);
+        }
+
+        void IDriver.WritePciConfigByte(uint pciAddress, byte regAddress, byte value)
+        {
+            WritePciConfigByte(pciAddress, regAddress, value);
+        }
+
+        void IDriver.WritePciConfigWord(uint pciAddress, byte regAddress, ushort value)
+        {
+            WritePciConfigWord(pciAddress, regAddress, value);
+        }
+
+        void IDriver.WritePciConfigDword(uint pciAddress, byte regAddress, uint value)
+        {
+            WritePciConfigDword(pciAddress, regAddress, value);
+        }
+
+        int IDriver.WritePciConfigByteEx(uint pciAddress, uint regAddress, byte value)
+        {
+            return WritePciConfigByteEx(pciAddress, regAddress, value);
+        }
+
+        int IDriver.WritePciConfigWordEx(uint pciAddress, uint regAddress, ushort value)
+        {
+            return WritePciConfigWordEx(pciAddress, regAddress, value);
+        }
+
+        int IDriver.WritePciConfigDwordEx(uint pciAddress, uint regAddress, uint value)
+        {
+            return WritePciConfigDwordEx(pciAddress, regAddress, value);
+        }
+
+        #endregion
+
+        #region Public
 
         // PCI Device Address to Bus Number
         public uint PciGetBus(uint address)
@@ -304,7 +446,7 @@ namespace WinRing0Driver.Driver
         bool ExtractDriver()
         {
             //Check for Windows
-            if (!Utilities.OperatingSystem.IsWindows())
+            if (!Software.OperatingSystem.IsWindows())
             {
                 return false;
             }
@@ -507,7 +649,7 @@ namespace WinRing0Driver.Driver
 
         static bool ExtractDriverResourceToFilePath(string filePath, string driver32bitArchive, string driver64bitArchive)
         {
-            string resourceName = $"{nameof(WinRing0Driver)}.Resources.{(Environment.Is64BitOperatingSystem ? driver64bitArchive : driver32bitArchive)}";
+            string resourceName = $"{nameof(RAMSPDToolkit)}.Resources.{(Environment.Is64BitOperatingSystem ? driver64bitArchive : driver32bitArchive)}";
 
             var assemblyWithDriverResource = typeof(OLS).Assembly;
 

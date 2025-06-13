@@ -10,8 +10,7 @@
  */
 
 using RAMSPDToolkit.Logging;
-
-using OS = WinRing0Driver.Utilities.OperatingSystem;
+using OS = RAMSPDToolkit.Software.OperatingSystem;
 
 namespace RAMSPDToolkit.I2CSMBus
 {
@@ -20,24 +19,8 @@ namespace RAMSPDToolkit.I2CSMBus
     /// </summary>
     public static class SMBusManager
     {
-        #region Constructor
-
-        static SMBusManager()
-        {
-            //Initialize fixed detect methods
-            Initialize();
-
-            //Do initial detect for SMBuses
-            DetectSMBuses();
-        }
-
-        #endregion
-
         #region Fields
 
-        static bool _IsInitialized;
-
-        static List<Func<bool>> _SMBusDetectMethods = new List<Func<bool>>();
         static List<SMBusInterface> _RegisteredSMBuses = new List<SMBusInterface>();
 
         #endregion
@@ -45,12 +28,9 @@ namespace RAMSPDToolkit.I2CSMBus
         #region Properties
 
         /// <summary>
-        /// Holds SMBus detection methods.
+        /// Determine whether to use WMI for SMBus dectection or not (will use SetupAPI instead).
         /// </summary>
-        public static IReadOnlyList<Func<bool>> SMBusDetectMethods
-        {
-            get { return _SMBusDetectMethods; }
-        }
+        public static bool UseWMI { get; set; } = false;
 
         /// <summary>
         /// Holds all registered SMBus instances.
@@ -76,16 +56,38 @@ namespace RAMSPDToolkit.I2CSMBus
         }
 
         /// <summary>
-        /// Uses <see cref="SMBusDetectMethods"/> to detect all currently available SMBuses.<br/>
+        /// Uses available detection methods to detect all currently available SMBuses.<br/>
         /// This also clears current <see cref="RegisteredSMBuses"/>.
         /// </summary>
         public static void DetectSMBuses()
         {
-            _RegisteredSMBuses.Clear();
+            var smbusDetectMethods = new List<Func<bool>>();
 
-            LogSimple.LogTrace($"Detecting SMBuses - amount of available detection methods are {SMBusDetectMethods.Count}.");
+            if (OS.IsWindows())
+            {
+                //smbusDetectMethods.Add(I2CSMBusAmdAdl.SMBusDetect);
 
-            foreach (var detection in SMBusDetectMethods)
+                if (UseWMI)
+                {
+                    smbusDetectMethods.Add(SMBusI801 .SMBusDetect);
+                    smbusDetectMethods.Add(SMBusPiix4.SMBusDetect);
+                }
+                else
+                {
+                    smbusDetectMethods.Add(WindowsSMBusDetector.DetectSMBuses);
+                }
+
+                smbusDetectMethods.Add(SMBusNVAPI  .SMBusDetect);
+                smbusDetectMethods.Add(SMBusNCT6775.SMBusDetect);
+            }
+            else if (OS.IsLinux())
+            {
+                smbusDetectMethods.Add(SMBusLinux.SMBusDetect);
+            }
+
+            LogSimple.LogTrace($"Detecting SMBuses - amount of available detection methods are {smbusDetectMethods.Count}.");
+
+            foreach (var detection in smbusDetectMethods)
             {
                 detection?.Invoke();
             }
@@ -98,33 +100,6 @@ namespace RAMSPDToolkit.I2CSMBus
         internal static void AddSMBus(SMBusInterface smbus)
         {
             _RegisteredSMBuses.Add(smbus);
-        }
-
-        #endregion
-
-        #region Private
-
-        static void Initialize()
-        {
-            if (_IsInitialized)
-            {
-                return;
-            }
-
-            if (OS.IsWindows())
-            {
-                //_SMBusDetectMethods.Add(I2CSMBusAmdAdl .SMBusDetect);
-                _SMBusDetectMethods.Add(SMBusI801   .SMBusDetect);
-                _SMBusDetectMethods.Add(SMBusPiix4  .SMBusDetect);
-                _SMBusDetectMethods.Add(SMBusNVAPI  .SMBusDetect);
-                _SMBusDetectMethods.Add(SMBusNCT6775.SMBusDetect);
-            }
-            else if (OS.IsLinux())
-            {
-                _SMBusDetectMethods.Add(SMBusLinux  .SMBusDetect);
-            }
-
-            _IsInitialized = true;
         }
 
         #endregion

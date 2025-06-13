@@ -12,8 +12,11 @@
 using RAMSPDToolkit.I2CSMBus.Interop;
 using RAMSPDToolkit.I2CSMBus.Interop.Piix4;
 using RAMSPDToolkit.I2CSMBus.Interop.Shared;
+using RAMSPDToolkit.Logging;
+using RAMSPDToolkit.Mutexes;
+using RAMSPDToolkit.PCI;
 using RAMSPDToolkit.Windows.Driver;
-using OS = WinRing0Driver.Utilities.OperatingSystem;
+using OS = RAMSPDToolkit.Software.OperatingSystem;
 
 namespace RAMSPDToolkit.I2CSMBus
 {
@@ -24,31 +27,33 @@ namespace RAMSPDToolkit.I2CSMBus
     {
         #region Constructor
 
-        SMBusPiix4()
+        SMBusPiix4(uint pciAddress)
         {
-            //Check for Windows
-            if (OS.IsWindows())
+            if (!OS.IsWindows())
             {
-                //Assume shared smbus access
-                _GlobalSMBusAccessHandle = Kernel32.CreateMutex(IntPtr.Zero, false, SharedConstants.GlobalSMBusMutexName);
+                throw new PlatformNotSupportedException();
             }
-        }
 
-        ~SMBusPiix4()
-        {
-            //Check for Windows
-            if (OS.IsWindows())
-            {
-                //Cleanup for Handle
-                Kernel32.CloseHandle(_GlobalSMBusAccessHandle);
-            }
+            _PCIAddress = pciAddress;
+
+            _PCICMDOriginal = DriverAccess.ReadPciConfigWord(_PCIAddress, SharedConstants.PCICMD);
+
+            LogSimple.LogTrace($"{nameof(SMBusPiix4)}: PCICMD is 0x{_PCICMDOriginal:X4} ({_PCICMDOriginal}).");
         }
 
         #endregion
 
         #region Fields
 
-        IntPtr _GlobalSMBusAccessHandle;
+        /// <summary>
+        /// PCI address of the SMBus controller. Used for PCICMD modifications.
+        /// </summary>
+        readonly uint _PCIAddress = PCIConstants.PCI_DEVICE_INVALID;
+
+        /// <summary>
+        /// Initial value of the PCI Command Register (PCICMD) for this SMBus controller.
+        /// </summary>
+        readonly ushort _PCICMDOriginal;
 
         #endregion
 
@@ -79,27 +84,21 @@ namespace RAMSPDToolkit.I2CSMBus
 
         protected override int I2CSMBusXfer(byte addr, byte read_write, byte command, int size, SMBusData data)
         {
-            //Check for Windows
-            if (OS.IsWindows())
+            //Lock SMBus mutex
+            using (var smbm = new WorldMutexGuard(WorldMutexManager.WorldSMBusMutex))
             {
-                if (_GlobalSMBusAccessHandle != IntPtr.Zero)
+                //Lock PCI mutex
+                using (var pci = new WorldMutexGuard(WorldMutexManager.WorldPCIMutex))
                 {
-                    Kernel32.WaitForSingleObject(_GlobalSMBusAccessHandle, I2CConstants.INFINITE_TIME);
+                    //Modify (if necessary) and restore PCICMD
+                    using (var io = new PCICMDIOGuard(_PCIAddress, _PCICMDOriginal))
+                    {
+                        var result = Piix4Access(addr, read_write, command, size, data);
+
+                        return result;
+                    }
                 }
             }
-
-            var result = Piix4Access(addr, read_write, command, size, data);
-
-            //Check for Windows
-            if (OS.IsWindows())
-            {
-                if (_GlobalSMBusAccessHandle != IntPtr.Zero)
-                {
-                    Kernel32.ReleaseMutex(_GlobalSMBusAccessHandle);
-                }
-            }
-
-            return result;
         }
 
         protected override int I2CXfer(byte addr, byte read_write, int? size, byte[] data)
@@ -155,34 +154,39 @@ namespace RAMSPDToolkit.I2CSMBus
                         int sbvID = Convert.ToInt32(sbvStr, 16);
                         int sbdID = Convert.ToInt32(sbdStr, 16);
 
-                        var piix4Bus0 = new SMBusPiix4();
-                        piix4Bus0.PortID = SMBusManager.RegisteredSMBuses.Count; // Assign next available port ID
-                        piix4Bus0.PCIVendor = venID;
-                        piix4Bus0.PCIDevice = devID;
-                        piix4Bus0.PCISubsystemVendor = sbvID;
-                        piix4Bus0.PCISubsystemDevice = sbdID;
-                        piix4Bus0.DeviceName = item["Description"] + " at 0x0B00";
+                        var pciAddress = DriverAccess.FindPciDeviceById((ushort)venID, (ushort)devID, 0);
+                        if (pciAddress == PCIConstants.PCI_DEVICE_INVALID)
+                        {
+                            return false;
+                        }
 
-                        piix4Bus0.Piix4_SMBA = 0x0B00;
+                        Create(pciAddress, 0x0B00, venID, devID, sbvID, sbdID, item["Description"] + " at 0x0B00");
 
-                        SMBusManager.AddSMBus(piix4Bus0);
-
-                        var piix4Bus1 = new SMBusPiix4();
-                        piix4Bus1.PortID = SMBusManager.RegisteredSMBuses.Count; // Assign next available port ID
-                        piix4Bus1.PCIVendor = venID;
-                        piix4Bus1.PCIDevice = devID;
-                        piix4Bus1.PCISubsystemVendor = sbvID;
-                        piix4Bus1.PCISubsystemDevice = sbdID;
-                        piix4Bus1.DeviceName = item["Description"] + " at 0x0B20";
-
-                        piix4Bus1.Piix4_SMBA = 0x0B20;
-
-                        SMBusManager.AddSMBus(piix4Bus1);
+                        Create(pciAddress, 0x0B20, venID, devID, sbvID, sbdID, item["Description"] + " at 0x0B20");
                     }
                 }
             }
 
             return true;
+        }
+
+        #endregion
+
+        #region Internal
+
+        internal static void Create(uint pciAddress, ushort smba, int vendor, int device, int subsysVendor, int subsysDevice, string deviceName)
+        {
+            var piix4Bus = new SMBusPiix4(pciAddress);
+            piix4Bus.PortID = SMBusManager.RegisteredSMBuses.Count; // Assign next available port ID
+            piix4Bus.PCIVendor = vendor;
+            piix4Bus.PCIDevice = device;
+            piix4Bus.PCISubsystemVendor = subsysVendor;
+            piix4Bus.PCISubsystemDevice = subsysDevice;
+            piix4Bus.DeviceName = deviceName;
+
+            piix4Bus.Piix4_SMBA = smba;
+
+            SMBusManager.AddSMBus(piix4Bus);
         }
 
         #endregion

@@ -12,6 +12,7 @@
 using RAMSPDToolkit.I2CSMBus.Interop;
 using RAMSPDToolkit.I2CSMBus.Interop.AMD;
 using RAMSPDToolkit.Logging;
+using RAMSPDToolkit.PCI;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -233,7 +234,7 @@ namespace RAMSPDToolkit.I2CSMBus
 
                         var amdSMBus = new SMBusAmdAdl(context, device.AdapterIndex);
 
-                        if (amdSMBus.PCIVendor != I2CConstants.PCI_VENDOR_AMD_GPU)
+                        if (amdSMBus.PCIVendor != PCIConstants.PCI_VENDOR_AMD_GPU)
                         {
                             continue;
                         }

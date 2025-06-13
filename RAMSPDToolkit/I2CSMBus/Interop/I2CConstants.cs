@@ -31,13 +31,6 @@ namespace RAMSPDToolkit.I2CSMBus.Interop
         public const int I2C_SMBUS_BLOCK_PROC_CALL  = 7; /* SMBus 2.0 */
         public const int I2C_SMBUS_I2C_BLOCK_DATA   = 8;
 
-        public const int PCI_VENDOR_AMD     = 0x1022;
-        public const int PCI_VENDOR_AMD_GPU = 0x1002;
-        public const int PCI_VENDOR_INTEL   = 0x8086;
-        public const int PCI_VENDOR_NVIDIA  = 0x10DE;
-
-        public const uint PCI_DEVICE_INVALID = 0xFFFFFFFF;
-
         public const uint INFINITE_TIME = 0xFFFFFFFF;
     }
 }

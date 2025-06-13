@@ -12,9 +12,10 @@
 using RAMSPDToolkit.I2CSMBus.Interop;
 using RAMSPDToolkit.I2CSMBus.Interop.NCT6775;
 using RAMSPDToolkit.I2CSMBus.Interop.Shared;
+using RAMSPDToolkit.Mutexes;
 using RAMSPDToolkit.SuperInOut;
 using RAMSPDToolkit.Windows.Driver;
-using OS = WinRing0Driver.Utilities.OperatingSystem;
+using OS = RAMSPDToolkit.Software.OperatingSystem;
 
 namespace RAMSPDToolkit.I2CSMBus
 {
@@ -27,29 +28,11 @@ namespace RAMSPDToolkit.I2CSMBus
 
         SMBusNCT6775()
         {
-            //Check for Windows
-            if (OS.IsWindows())
+            if (!OS.IsWindows())
             {
-                //Assume shared smbus access
-                _GlobalSMBusAccessHandle = Kernel32.CreateMutex(IntPtr.Zero, false, SharedConstants.GlobalSMBusMutexName);
+                throw new PlatformNotSupportedException();
             }
         }
-
-        ~SMBusNCT6775()
-        {
-            //Check for Windows
-            if (OS.IsWindows())
-            {
-                //Cleanup for Handle
-                Kernel32.CloseHandle(_GlobalSMBusAccessHandle);
-            }
-        }
-
-        #endregion
-
-        #region Fields
-
-        IntPtr _GlobalSMBusAccessHandle;
 
         #endregion
 
@@ -75,27 +58,12 @@ namespace RAMSPDToolkit.I2CSMBus
 
         protected override int I2CSMBusXfer(byte addr, byte read_write, byte command, int size, SMBusData data)
         {
-            //Check for Windows
-            if (OS.IsWindows())
+            using (var guard = new WorldMutexGuard(WorldMutexManager.WorldSMBusMutex))
             {
-                if (_GlobalSMBusAccessHandle != IntPtr.Zero)
-                {
-                    Kernel32.WaitForSingleObject(_GlobalSMBusAccessHandle, I2CConstants.INFINITE_TIME);
-                }
+                var result = NCT6775Access(addr, read_write, command, size, data);
+
+                return result;
             }
-
-            var result = NCT6775Access(addr, read_write, command, size, data);
-
-            //Check for Windows
-            if (OS.IsWindows())
-            {
-                if (_GlobalSMBusAccessHandle != IntPtr.Zero)
-                {
-                    Kernel32.ReleaseMutex(_GlobalSMBusAccessHandle);
-                }
-            }
-
-            return result;
         }
 
         protected override int I2CXfer(byte addr, byte read_write, int? size, byte[] data)

@@ -9,7 +9,7 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
-namespace WinRing0Driver.Utilities
+namespace RAMSPDToolkit.Software
 {
     /// <summary>
     /// Represents information about an operating system.

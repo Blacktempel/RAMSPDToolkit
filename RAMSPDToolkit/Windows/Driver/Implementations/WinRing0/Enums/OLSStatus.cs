@@ -10,14 +10,15 @@
 //
 // Code adjustments and additions by Florian K.
 
-namespace WinRing0Driver.Driver.Enums
+namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Enums
 {
-    //For WinRing0
-    public enum OLSErrorPCI : uint
+    //For this support library
+    internal enum OLSStatus
     {
-        OLS_ERROR_PCI_BUS_NOT_EXIST = 0xE0000001,
-        OLS_ERROR_PCI_NO_DEVICE     = 0xE0000002,
-        OLS_ERROR_PCI_WRITE_CONFIG  = 0xE0000003,
-        OLS_ERROR_PCI_READ_CONFIG   = 0xE0000004,
+        NO_ERROR               = 0,
+        DLL_NOT_FOUND          = 1,
+        DLL_INCORRECT_VERSION  = 2,
+        DLL_INITIALIZE_ERROR   = 3,
+        DLL_RESOURCE_NOT_FOUND = 4,
     }
 }

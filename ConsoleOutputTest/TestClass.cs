@@ -17,8 +17,8 @@ using RAMSPDToolkit.SPD;
 using RAMSPDToolkit.SPD.Interfaces;
 using RAMSPDToolkit.SPD.Interop.Shared;
 using RAMSPDToolkit.Utilities;
-using WinRing0Driver.Driver;
-using WinRing0Driver.Driver.Enums;
+using RAMSPDToolkit.Windows.Driver;
+using RAMSPDToolkit.Windows.Driver.Implementations;
 
 namespace ConsoleOutputTest
 {
@@ -46,23 +46,29 @@ namespace ConsoleOutputTest
             {
                 Log($"Entering {nameof(DoTest)}.");
 
-                //Check for Windows OS and load WinRing0 / OLS Driver
+                //Check for Windows OS and load driver
                 if (OperatingSystem.IsWindows())
                 {
-                    if (!DriverManager.LoadDriver())
+                    //Init OLS driver
+                    DriverManager.InitDriver(InternalDriver.OLS);
+
+                    //Check if OLS driver was initalized and could be loaded
+                    if (DriverManager.DriverImplementation == InternalDriver.OLS
+                     && DriverManager.Driver.Load())
                     {
-                        Log($"***** DRIVER ERROR *****");
-                        Log($"-> OLS Status Code: {DriverManager.Ols.OLSStatus}");
-                        Log($"-> DLL Status Code: {(OLSDLLStatus)DriverManager.Ols.GetDllStatus()}");
-                        throw new Exception("Driver is not open.");
+                        Log("***** Driver is open. *****");
                     }
                     else
                     {
-                        Log("***** Driver is open. *****");
+                        Log($"***** DRIVER ERROR *****");
+                        throw new Exception("Driver is not open.");
                     }
                 }
 
                 //Driver is open / loaded or we are on Linux, we can continue
+
+                //Detect SMBuses
+                SMBusManager.DetectSMBuses();
 
                 Log("Outputting all detected SMBuses:");
 
@@ -128,7 +134,7 @@ namespace ConsoleOutputTest
                 if (OperatingSystem.IsWindows())
                 {
                     //Finished, must do cleanup
-                    DriverManager.UnloadDriver();
+                    DriverManager.Driver.Unload();
                     Log("***** Closed driver. *****");
                 }
             }

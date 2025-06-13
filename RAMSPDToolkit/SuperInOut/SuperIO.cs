@@ -10,7 +10,8 @@
  */
 
 using RAMSPDToolkit.Windows.Driver;
-using OS = WinRing0Driver.Utilities.OperatingSystem;
+
+using OS = RAMSPDToolkit.Software.OperatingSystem;
 
 namespace RAMSPDToolkit.SuperInOut
 {

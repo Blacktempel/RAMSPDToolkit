@@ -77,63 +77,68 @@ namespace RAMSPDToolkit.SPD
         /// <returns>True if DDR5 is available at specified address; false otherwise.</returns>
         public static bool IsAvailable(SMBusInterface bus, byte address)
         {
-            bool retry = true;
+            //Read current page
+            int status = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_MREG_VIRTUAL_PAGE, SPDConstants.SPD_DATA_RETRIES, out byte page);
 
-            while (true)
+            if (status < 0)
             {
-                Thread.Sleep(SPDConstants.SPD_IO_DELAY);
+                LogSimple.LogWarn($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to read current page due to error {status}.");
+            }
 
-                //This value should be 0x51
-                int ddr5Magic = bus.i2c_smbus_read_byte_data(address, 0x00);
+            //First 3 bits of the MR11 register
+            page &= 0x07;
 
-                Thread.Sleep(SPDConstants.SPD_IO_DELAY);
-
-                //This value should be 0x18
-                int ddr5Sensor = bus.i2c_smbus_read_byte_data(address, 0x01);
-
-                Thread.Sleep(SPDConstants.SPD_IO_DELAY);
-
-                if (ddr5Magic < 0 || ddr5Sensor < 0)
+            //Page is off
+            if (page != 0)
+            {
+                //We can change the page
+                if (!bus.HasSPDWriteProtection)
                 {
-                    break;
-                }
+                    //Change page to 0
+                    status = bus.i2c_smbus_write_byte_data(address, DDR5Constants.SPD_DDR5_MREG_VIRTUAL_PAGE, 0);
 
-                if (ddr5Magic == 0x51 && (ddr5Sensor & 0xEF) == 0x08)
-                {
-                    return true;
-                }
-
-                int page = bus.i2c_smbus_read_byte_data(address, DDR5Constants.SPD_DDR5_MREG_VIRTUAL_PAGE);
-
-                Thread.Sleep(SPDConstants.SPD_IO_DELAY);
-
-                if (page < 0)
-                {
-                    break;
-                }
-                else if (retry && page > 0 && page < (DDR5Constants.SPD_DDR5_EEPROM_LENGTH >> DDR5Constants.SPD_DDR5_EEPROM_PAGE_SHIFT))
-                {
-                    //Can only change page if we don't have write protection enabled
-                    if (!bus.HasSPDWriteProtection)
+                    if (status < 0)
                     {
-                        //This device might still be a DDR5 module, just the page is off
-                        bus.i2c_smbus_write_byte_data(address, DDR5Constants.SPD_DDR5_MREG_VIRTUAL_PAGE, 0);
-
-                        Thread.Sleep(SPDConstants.SPD_IO_DELAY);
-                    }
-                    else
-                    {
-                        break;
+                        LogSimple.LogWarn($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to change current page due to error {page}.");
+                        return false;
                     }
 
-                    retry = false;
+                    //Page change OK, continue
                 }
-                else
+                else //Write protection is active
                 {
-                    break;
+                    LogSimple.LogWarn($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} page is off. Cannot change due to {nameof(bus.HasSPDWriteProtection)} being active.");
+                    return false;
                 }
             }
 
+            //Try read most significant byte
+            //Result should be 0x51
+            var result = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST, SPDConstants.SPD_DATA_RETRIES, out byte ddr5Magic);
+
+            if (result < 0)
+            {
+                LogSimple.LogWarn($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to read {nameof(DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST)} due to error {result}.");
+            }
+
+            //Try read least significant byte
+            //Result should be 0x18
+            result = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_DEVICE_TYPE_LEAST, SPDConstants.SPD_DATA_RETRIES, out byte ddr5Sensor);
+
+            if (result < 0)
+            {
+                LogSimple.LogWarn($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to read {nameof(DDR5Constants.SPD_DDR5_DEVICE_TYPE_LEAST)} due to error {result}.");
+            }
+
+            //Is it a DDR5 module ?
+            if (ddr5Magic  == DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST_EXPECTED
+             && ddr5Sensor == DDR5Constants.SPD_DDR5_DEVICE_TYPE_LEAST_EXPECTED)
+            {
+                //We have a proper DDR5 + Thermal Sensor module
+                return true;
+            }
+
+            //No proper DDR5 module
             return false;
         }
 
@@ -156,7 +161,7 @@ namespace RAMSPDToolkit.SPD
             byte offset = (byte)((address & DDR5Constants.SPD_DDR5_EEPROM_PAGE_MASK) | 0x80);
 
             //Read value at address
-            RetryReadByteData(_Address, offset, SPDConstants.SPD_DATA_RETRIES, out var value);
+            RetryReadByteData(_Bus, _Address, offset, SPDConstants.SPD_DATA_RETRIES, out var value);
 
             Thread.Sleep(SPDConstants.SPD_IO_DELAY);
 
@@ -175,7 +180,7 @@ namespace RAMSPDToolkit.SPD
             //Set page to 0 to read volatile data
             SetPage(0);
 
-            var status = RetryReadWordData(_Address, DDR5Constants.SPD_DDR5_TEMPERATURE_ADDRESS, SPDConstants.SPD_TS_RETRIES, out ushort temp);
+            var status = RetryReadWordData(_Bus, _Address, DDR5Constants.SPD_DDR5_TEMPERATURE_ADDRESS, SPDConstants.SPD_TS_RETRIES, out ushort temp);
 
             if (status >= 0)
             {
@@ -199,7 +204,7 @@ namespace RAMSPDToolkit.SPD
                 byte byteTemp;
 
                 //Thermal sensor enabled
-                var status = RetryReadByteData(_Address, DDR5Constants.SPD_DDR5_THERMAL_SENSOR_ENABLED, retries, out byteTemp);
+                var status = RetryReadByteData(_Bus, _Address, DDR5Constants.SPD_DDR5_THERMAL_SENSOR_ENABLED, retries, out byteTemp);
                 if (status < 0)
                 {
                     LogSimple.LogTrace($"Reading {nameof(DDR5Constants.SPD_DDR5_THERMAL_SENSOR_ENABLED)} failed with status {status}.");
@@ -212,7 +217,7 @@ namespace RAMSPDToolkit.SPD
                 }
 
                 //Thermal sensor status
-                status = RetryReadByteData(_Address, DDR5Constants.SPD_DDR5_THERMAL_SENSOR_STATUS, retries, out byteTemp);
+                status = RetryReadByteData(_Bus, _Address, DDR5Constants.SPD_DDR5_THERMAL_SENSOR_STATUS, retries, out byteTemp);
                 if (status < 0)
                 {
                     LogSimple.LogTrace($"Reading {nameof(DDR5Constants.SPD_DDR5_THERMAL_SENSOR_STATUS)} failed with status {status}.");
@@ -259,7 +264,7 @@ namespace RAMSPDToolkit.SPD
             ushort wordTemp;
 
             //Device capability
-            var status = RetryReadByteData(_Address, DDR5Constants.SPD_DDR5_DEVICE_CAPABILITY, retries, out byteTemp);
+            var status = RetryReadByteData(_Bus, _Address, DDR5Constants.SPD_DDR5_DEVICE_CAPABILITY, retries, out byteTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR5Constants.SPD_DDR5_DEVICE_CAPABILITY)} failed with status {status}.");
@@ -278,7 +283,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Sensor high limit
-            status = RetryReadWordData(_Address, DDR5Constants.SPD_DDR5_THERMAL_SENSOR_HIGH_LIMIT_CONFIGURATION, retries, out wordTemp);
+            status = RetryReadWordData(_Bus, _Address, DDR5Constants.SPD_DDR5_THERMAL_SENSOR_HIGH_LIMIT_CONFIGURATION, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR5Constants.SPD_DDR5_THERMAL_SENSOR_HIGH_LIMIT_CONFIGURATION)} failed with status {status}.");
@@ -290,7 +295,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Sensor low limit
-            status = RetryReadWordData(_Address, DDR5Constants.SPD_DDR5_THERMAL_SENSOR_LOW_LIMIT_CONFIGURATION, retries, out wordTemp);
+            status = RetryReadWordData(_Bus, _Address, DDR5Constants.SPD_DDR5_THERMAL_SENSOR_LOW_LIMIT_CONFIGURATION, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR5Constants.SPD_DDR5_THERMAL_SENSOR_LOW_LIMIT_CONFIGURATION)} failed with status {status}.");
@@ -302,7 +307,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Sensor critical high limit
-            status = RetryReadWordData(_Address, DDR5Constants.SPD_DDR5_THERMAL_SENSOR_CRITICAL_HIGH_LIMIT_CONFIGURATION, retries, out wordTemp);
+            status = RetryReadWordData(_Bus, _Address, DDR5Constants.SPD_DDR5_THERMAL_SENSOR_CRITICAL_HIGH_LIMIT_CONFIGURATION, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR5Constants.SPD_DDR5_THERMAL_SENSOR_CRITICAL_HIGH_LIMIT_CONFIGURATION)} failed with status {status}.");
@@ -314,7 +319,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Sensor critical low limit
-            status = RetryReadWordData(_Address, DDR5Constants.SPD_DDR5_THERMAL_SENSOR_CRITICAL_LOW_LIMIT_CONFIGURATION, retries, out wordTemp);
+            status = RetryReadWordData(_Bus, _Address, DDR5Constants.SPD_DDR5_THERMAL_SENSOR_CRITICAL_LOW_LIMIT_CONFIGURATION, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR5Constants.SPD_DDR5_THERMAL_SENSOR_CRITICAL_LOW_LIMIT_CONFIGURATION)} failed with status {status}.");

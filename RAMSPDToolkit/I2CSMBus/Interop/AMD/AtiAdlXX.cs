@@ -16,7 +16,7 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.AMD
     /// </summary>
     internal sealed class AtiAdl
     {
-        public delegate nint ADL_MAIN_MALLOC_CALLBACK(int x);
+        public delegate IntPtr ADL_MAIN_MALLOC_CALLBACK(int x);
 
         /// <summary>
         /// Function to initialize the ADL2 interface and to obtain client's context handle.<br/>
@@ -39,7 +39,7 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.AMD
         /// finally destroyed using ADL2_Main_Control_Destroy.</param>
         /// <returns>If the function succeeds, the return value is <see cref="AMDConstants.ADL_OK"/>.
         /// Otherwise the return value is an ADL error code.</returns>
-        public delegate int _ADL2_Main_Control_Create(ADL_MAIN_MALLOC_CALLBACK callback, int iEnumConnectedAdapters, out nint context);
+        public delegate int _ADL2_Main_Control_Create(ADL_MAIN_MALLOC_CALLBACK callback, int iEnumConnectedAdapters, out IntPtr context);
 
         /// <summary>
         /// Destroy client's ADL context.<br/>
@@ -51,7 +51,7 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.AMD
         /// <param name="context">ADL_CONTEXT_HANDLE instance to destroy.</param>
         /// <returns>If the function succeeds, the return value is <see cref="AMDConstants.ADL_OK"/>.
         /// Otherwise the return value is an ADL error code.</returns>
-        public delegate int _ADL2_Main_Control_Destroy(nint context);
+        public delegate int _ADL2_Main_Control_Destroy(IntPtr context);
 
         /// <summary>
         /// Function to retrieve the primary display adapter index.<br/>
@@ -61,7 +61,7 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.AMD
         /// <param name="lpPrimaryAdapterIndex">The pointer to the ADL index handle of the primary adapter.</param>
         /// <returns>If the function succeeds, the return value is <see cref="AMDConstants.ADL_OK"/>.
         /// Otherwise the return value is an ADL error code.</returns>
-        public delegate int _ADL2_Adapter_Primary_Get(nint context, out int lpPrimaryAdapterIndex);
+        public delegate int _ADL2_Adapter_Primary_Get(IntPtr context, out int lpPrimaryAdapterIndex);
 
         /// <summary>
         /// Function to write and read I2C.<br/>
@@ -72,7 +72,7 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.AMD
         /// <param name="pI2C">A pointer to the <see cref="ADLI2C"/> structure.</param>
         /// <returns>If the function succeeds, the return value is <see cref="AMDConstants.ADL_OK"/>.
         /// Otherwise the return value is an ADL error code.</returns>
-        public delegate int _ADL2_Display_WriteAndReadI2C(nint context, int iAdapterIndex, nint pI2C);
+        public delegate int _ADL2_Display_WriteAndReadI2C(IntPtr context, int iAdapterIndex, IntPtr pI2C);
 
         /// <summary>
         /// ADL local interface. Retrieves extended adapter information for given adapter or all OS-known adapters.<br/>
@@ -88,6 +88,6 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.AMD
         /// Initialize to NULL before calling this API.
         /// ADL will allocate the necessary memory, using the user provided callback function.</param>
         /// <returns>If the function valid, the return value is 1. Otherwise it is 0.</returns>
-        public delegate int _ADL2_Adapter_AdapterInfoX4_Get(nint context, int iAdapterIndex, out int numAdapters, out nint lppAdapterInfoX2);
+        public delegate int _ADL2_Adapter_AdapterInfoX4_Get(IntPtr context, int iAdapterIndex, out int numAdapters, out IntPtr lppAdapterInfoX2);
     }
 }

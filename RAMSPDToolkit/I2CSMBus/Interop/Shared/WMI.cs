@@ -14,7 +14,7 @@
 using System.Management;
 using System.Text.RegularExpressions;
 
-using OS = WinRing0Driver.Utilities.OperatingSystem;
+using OS = RAMSPDToolkit.Software.OperatingSystem;
 
 namespace RAMSPDToolkit.I2CSMBus.Interop.Shared
 {

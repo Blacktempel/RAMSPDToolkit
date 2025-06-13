@@ -19,6 +19,9 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.Piix4
         public const int PIIX4_WORD_DATA  = 0x0C;
         public const int PIIX4_BLOCK_DATA = 0x14;
 
+        public const int PIIX4_SMBA_0 = 0x0B00;
+        public const int PIIX4_SMBA_1 = 0x0B20;
+
         public const int MAX_TIMEOUT = 5000;
     }
 }

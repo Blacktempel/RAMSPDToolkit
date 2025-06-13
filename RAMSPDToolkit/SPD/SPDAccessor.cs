@@ -49,9 +49,9 @@ namespace RAMSPDToolkit.SPD
 
         #region Protected
 
-        protected int RetryReadByteData(byte address, byte what, int retries, out byte byteData)
+        protected static int RetryReadByteData(SMBusInterface bus, byte address, byte what, int retries, out byte byteData)
         {
-            var status = _Bus.i2c_smbus_read_byte_data(address, what);
+            var status = bus.i2c_smbus_read_byte_data(address, what);
 
             if (status < 0 && retries > 0)
             {
@@ -68,7 +68,7 @@ namespace RAMSPDToolkit.SPD
                     {
                         Thread.Sleep(SPDConstants.SPD_IO_DELAY);
 
-                        status = _Bus.i2c_smbus_read_byte_data(address, what);
+                        status = bus.i2c_smbus_read_byte_data(address, what);
                     }
                 }
             }
@@ -85,9 +85,9 @@ namespace RAMSPDToolkit.SPD
             return status;
         }
 
-        protected int RetryReadWordData(byte address, byte what, int retries, out ushort word)
+        protected static int RetryReadWordData(SMBusInterface bus, byte address, byte what, int retries, out ushort word)
         {
-            var status = _Bus.i2c_smbus_read_word_data(address, what);
+            var status = bus.i2c_smbus_read_word_data(address, what);
 
             if (status < 0 && retries > 0)
             {
@@ -104,7 +104,7 @@ namespace RAMSPDToolkit.SPD
                     {
                         Thread.Sleep(SPDConstants.SPD_IO_DELAY);
 
-                        status = _Bus.i2c_smbus_read_word_data(address, what);
+                        status = bus.i2c_smbus_read_word_data(address, what);
                     }
                 }
             }
@@ -121,9 +121,9 @@ namespace RAMSPDToolkit.SPD
             return status;
         }
 
-        protected int RetryReadWordDataSwapped(byte address, byte what, int retries, out ushort word)
+        protected static int RetryReadWordDataSwapped(SMBusInterface bus, byte address, byte what, int retries, out ushort word)
         {
-            var status = _Bus.i2c_smbus_read_word_data_swapped(address, what);
+            var status = bus.i2c_smbus_read_word_data_swapped(address, what);
 
             if (status < 0 && retries > 0)
             {
@@ -140,7 +140,7 @@ namespace RAMSPDToolkit.SPD
                     {
                         Thread.Sleep(SPDConstants.SPD_IO_DELAY);
 
-                        status = _Bus.i2c_smbus_read_word_data_swapped(address, what);
+                        status = bus.i2c_smbus_read_word_data_swapped(address, what);
                     }
                 }
             }

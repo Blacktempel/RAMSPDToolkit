@@ -9,8 +9,8 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
-using WinRing0Driver.Interop;
-using WinRing0Driver.Utilities;
+using RAMSPDToolkit.Windows.Driver.Implementations;
+using RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Interop;
 
 namespace RAMSPDToolkit.I2CSMBus.Interop.AMD
 {

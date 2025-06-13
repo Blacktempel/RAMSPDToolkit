@@ -53,6 +53,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\WinRing0.dll.gz" />
+    <None Remove="Resources\WinRing0.sys.gz" />
+    <None Remove="Resources\WinRing0x64.dll.gz" />
+    <None Remove="Resources\WinRing0x64.sys.gz" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\WinRing0.dll.gz" />
+    <EmbeddedResource Include="Resources\WinRing0.sys.gz" />
+    <EmbeddedResource Include="Resources\WinRing0x64.dll.gz" />
+    <EmbeddedResource Include="Resources\WinRing0x64.sys.gz" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
@@ -61,10 +75,6 @@
 
   <ItemGroup>
     <PackageReference Include="System.Management" Version="9.0.5" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\WinRing0Driver\WinRing0Driver.csproj" />
   </ItemGroup>
 
   <ItemGroup>

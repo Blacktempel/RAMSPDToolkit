@@ -25,6 +25,11 @@ namespace RAMSPDToolkit.Logging
             Log(LogLevel.Warn, message);
         }
 
+        public static void LogError(string message)
+        {
+            Log(LogLevel.Error, message);
+        }
+
         #endregion
 
         #region Private

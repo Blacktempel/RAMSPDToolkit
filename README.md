@@ -1,5 +1,5 @@
 # RAMSPDToolkit
-[![GitHub license](https://img.shields.io/github/license/blacktempel/ramspdtoolkit?label=License)](https://github.com/blacktempel/ramspdtoolkit/blob/master/license)
+[![GitHub license](https://img.shields.io/github/license/blacktempel/ramspdtoolkit?label=License)](https://github.com/blacktempel/ramspdtoolkit/blob/master/LICENSE)
 [![Build master](https://github.com/Blacktempel/RAMSPDToolkit/actions/workflows/master.yml/badge.svg)](https://github.com/Blacktempel/RAMSPDToolkit/actions/workflows/master.yml)
 [![Nuget](https://img.shields.io/nuget/v/RAMSPDToolkit?label=NuGet)](https://www.nuget.org/packages/RAMSPDToolkit/)
 [![Nuget](https://img.shields.io/nuget/dt/RAMSPDToolkit?label=NuGet-Downloads)](https://www.nuget.org/packages/RAMSPDToolkit/)
@@ -17,8 +17,7 @@ Do this at your own risk and only if you know what you are doing.
 ## Project overview
 | Project | .NET Version[s] |
 | --- | --- |
-| **[RAMSPDToolkit](https://github.com/Blacktempel/RAMSPDToolkit/tree/master/RAMSPDToolkit)** <br/> RAM SPD functionality for your software / application. <br/> Also includes various SMBus implementations for Windows and Linux. <br/> Depends on WinRing0Driver. | .NET Framework 4.7.2 & 4.8.1 <br/> .NET 8 & .NET 9 |
-| **[WinRing0Driver](https://github.com/Blacktempel/RAMSPDToolkit/tree/master/WinRing0Driver)** <br/> WinRing0 driver implementation and binaries.<br/> This is required for RAMSPDToolkit. | .NET Framework 4.7.2 & 4.8.1 <br/> .NET 8 & .NET 9 |
+| **[RAMSPDToolkit](https://github.com/Blacktempel/RAMSPDToolkit/tree/master/RAMSPDToolkit)** <br/> RAM SPD functionality for your software / application. <br/> Also includes various SMBus implementations for Windows and Linux. | .NET Framework 4.7.2 & 4.8.1 <br/> .NET 8 & .NET 9 |
 | **[ConsoleOutputTest](https://github.com/Blacktempel/RAMSPDToolkit/tree/master/ConsoleOutputTest)** <br/> Example Application to show how some library functionality can be used. | .NET 8 |
 | **[GZipSingleFile](https://github.com/Blacktempel/RAMSPDToolkit/tree/master/GZipSingleFile)** <br/> Small ("internal") console application used to zip driver files. | .NET 8 |
 | **[Tools](https://github.com/Blacktempel/RAMSPDToolkit/tree/master/Tools)** <br/> Tools for the project. | --- |
@@ -53,21 +52,25 @@ static class Program
         //Check for Windows before loading driver
         if (OperatingSystem.IsWindows())
         {
-            //Load WinRing0 driver - this extracts driver files and loads them
-            if (!DriverManager.LoadDriver())
+            //Init OLS driver
+            DriverManager.InitDriver(InternalDriver.OLS);
+            //Check if OLS driver was initalized and could be loaded
+            if (DriverManager.DriverImplementation == InternalDriver.OLS
+             && DriverManager.Driver.Load())
             {
-                Console.WriteLine($"***** DRIVER ERROR *****");
-                Console.WriteLine($"-> OLS Status Code: {DriverManager.Ols.OLSStatus}");
-                Console.WriteLine($"-> DLL Status Code: {(OLSDLLStatus)DriverManager.Ols.GetDllStatus()}");
-                Environment.Exit(1);
+                Console.WriteLine("***** Driver is open. *****");
             }
             else
             {
-                Console.WriteLine("***** Driver is open *****");
+                Console.WriteLine($"***** DRIVER ERROR *****");
+                throw new Exception("Driver is not open.");
             }
         }
 
-        //First, go through available SMBuses
+        //Detect SMBuses
+        SMBusManager.DetectSMBuses();
+
+        //Go through available SMBuses
         foreach (var bus in SMBusManager.RegisteredSMBuses)
         {
             //Go through possible RAM slots
@@ -96,7 +99,7 @@ static class Program
         if (OperatingSystem.IsWindows())
         {
             //Unload the driver - this removes extracted driver files and unloads them
-            DriverManager.UnloadDriver();
+            DriverManager.Driver.Unload();
             Console.WriteLine("***** Closed driver *****");
         }
 

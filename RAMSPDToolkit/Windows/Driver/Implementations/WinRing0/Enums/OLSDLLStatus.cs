@@ -10,15 +10,17 @@
 //
 // Code adjustments and additions by Florian K.
 
-namespace WinRing0Driver.Driver.Enums
+namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Enums
 {
-    //For this support library
-    public enum OLSStatus
+    //For WinRing0
+    internal enum OLSDLLStatus
     {
-        NO_ERROR               = 0,
-        DLL_NOT_FOUND          = 1,
-        DLL_INCORRECT_VERSION  = 2,
-        DLL_INITIALIZE_ERROR   = 3,
-        DLL_RESOURCE_NOT_FOUND = 4,
+        OLS_DLL_NO_ERROR                     = 0,
+        OLS_DLL_UNSUPPORTED_PLATFORM         = 1,
+        OLS_DLL_DRIVER_NOT_LOADED            = 2,
+        OLS_DLL_DRIVER_NOT_FOUND             = 3,
+        OLS_DLL_DRIVER_UNLOADED              = 4,
+        OLS_DLL_DRIVER_NOT_LOADED_ON_NETWORK = 5,
+        OLS_DLL_UNKNOWN_ERROR                = 9,
     }
 }

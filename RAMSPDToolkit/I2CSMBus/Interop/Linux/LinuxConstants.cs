@@ -9,7 +9,7 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
-using RAMSPDToolkit.I2CSMBus.Interop.Intel;
+using RAMSPDToolkit.PCI;
 
 namespace RAMSPDToolkit.I2CSMBus.Interop.Linux
 {
@@ -19,9 +19,9 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.Linux
 
         public static IReadOnlyList<ushort> AllowedVendorIDs = new List<ushort>
         {
-            0x1002, //Advanced Micro Devices, Inc. [AMD/ATI]
-            0x1022, //Advanced Micro Devices, Inc. [AMD]
-            I2CConstants.PCI_VENDOR_INTEL, //Intel Corporation
+            PCIConstants.PCI_VENDOR_AMD_GPU, //Advanced Micro Devices, Inc. [AMD/ATI]
+            PCIConstants.PCI_VENDOR_AMD    , //Advanced Micro Devices, Inc. [AMD]
+            PCIConstants.PCI_VENDOR_INTEL  , //Intel Corporation
         };
 
         /* NOTE: Slave address is 7 or 10 bits, but 10-bit addresses

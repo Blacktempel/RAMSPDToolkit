@@ -9,11 +9,16 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
-namespace WinRing0Driver.Driver
+using System.Runtime.InteropServices;
+
+namespace RAMSPDToolkit.I2CSMBus.Interop.Shared.Structures
 {
-    internal class OLSConstants
+    [StructLayout(LayoutKind.Sequential)]
+    struct SP_DEVINFO_DATA
     {
-        public const string DriverFileName32Bit = "WinRing0";
-        public const string DriverFileName64Bit = "WinRing0x64";
+        public uint cbSize;
+        public Guid classGuid;
+        public uint devInst;
+        public IntPtr reserved;
     }
 }
