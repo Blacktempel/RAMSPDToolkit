@@ -9,6 +9,8 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
+using RAMSPDToolkit.Logging;
+
 #if !RELEASE_NDD
 
 using RAMSPDToolkit.Windows.Driver.Implementations;
@@ -45,11 +47,12 @@ namespace RAMSPDToolkit.Windows.Driver
             get { return _Driver; }
             set
             {
-                //Disallow changing driver after it has been set
-                if (_Driver == null)
+                if (_Driver != null)
                 {
-                    _Driver = value;
+                    LogSimple.LogWarn($"{nameof(Driver)} was resetted.");
                 }
+
+                _Driver = value;
             }
         }
 
@@ -65,20 +68,17 @@ namespace RAMSPDToolkit.Windows.Driver
         /// <param name="defaultDriver">Internal driver to use.</param>
         public static void InitDriver(InternalDriver defaultDriver)
         {
-            if (_Driver == null)
+            switch (defaultDriver)
             {
-                switch (defaultDriver)
-                {
-                    case InternalDriver.OLS:
-                        Driver = new OLS();
-                        break;
-                    case InternalDriver.Custom:
-                    default:
-                        break;
-                }
-
-                DriverImplementation = defaultDriver;
+                case InternalDriver.OLS:
+                    Driver = new OLS();
+                    break;
+                case InternalDriver.Custom:
+                default:
+                    break;
             }
+
+            DriverImplementation = defaultDriver;
         }
 #endif
 
