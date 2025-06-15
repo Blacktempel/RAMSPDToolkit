@@ -89,27 +89,27 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
         //-----------------------------------------------------------------------------
         // CPU
         //-----------------------------------------------------------------------------
-        public delegate int _IsCpuid();
-        public delegate int _IsMsr();
-        public delegate int _IsTsc();
-        public delegate int _Hlt();
-        public delegate int _HltTx(UIntPtr threadAffinityMask);
-        public delegate int _HltPx(UIntPtr processAffinityMask);
-        public delegate int _Rdmsr(uint index, ref uint eax, ref uint edx);
-        public delegate int _RdmsrTx(uint index, ref uint eax, ref uint edx, UIntPtr threadAffinityMask);
-        public delegate int _RdmsrPx(uint index, ref uint eax, ref uint edx, UIntPtr processAffinityMask);
-        public delegate int _Wrmsr(uint index, uint eax, uint edx);
-        public delegate int _WrmsrTx(uint index, uint eax, uint edx, UIntPtr threadAffinityMask);
-        public delegate int _WrmsrPx(uint index, uint eax, uint edx, UIntPtr processAffinityMask);
-        public delegate int _Rdpmc(uint index, ref uint eax, ref uint edx);
-        public delegate int _RdpmcTx(uint index, ref uint eax, ref uint edx, UIntPtr threadAffinityMask);
-        public delegate int _RdpmcPx(uint index, ref uint eax, ref uint edx, UIntPtr processAffinityMask);
-        public delegate int _Cpuid(uint index, ref uint eax, ref uint ebx, ref uint ecx, ref uint edx);
-        public delegate int _CpuidTx(uint index, ref uint eax, ref uint ebx, ref uint ecx, ref uint edx, UIntPtr threadAffinityMask);
-        public delegate int _CpuidPx(uint index, ref uint eax, ref uint ebx, ref uint ecx, ref uint edx, UIntPtr processAffinityMask);
-        public delegate int _Rdtsc(ref uint eax, ref uint edx);
-        public delegate int _RdtscTx(ref uint eax, ref uint edx, UIntPtr threadAffinityMask);
-        public delegate int _RdtscPx(ref uint eax, ref uint edx, UIntPtr processAffinityMask);
+        public delegate bool _IsCpuid();
+        public delegate bool _IsMsr();
+        public delegate bool _IsTsc();
+        public delegate bool _Hlt();
+        public delegate bool _HltTx(UIntPtr threadAffinityMask);
+        public delegate bool _HltPx(UIntPtr processAffinityMask);
+        public delegate bool _Rdmsr(uint index, ref uint eax, ref uint edx);
+        public delegate bool _RdmsrTx(uint index, ref uint eax, ref uint edx, UIntPtr threadAffinityMask);
+        public delegate bool _RdmsrPx(uint index, ref uint eax, ref uint edx, UIntPtr processAffinityMask);
+        public delegate bool _Wrmsr(uint index, uint eax, uint edx);
+        public delegate bool _WrmsrTx(uint index, uint eax, uint edx, UIntPtr threadAffinityMask);
+        public delegate bool _WrmsrPx(uint index, uint eax, uint edx, UIntPtr processAffinityMask);
+        public delegate bool _Rdpmc(uint index, ref uint eax, ref uint edx);
+        public delegate bool _RdpmcTx(uint index, ref uint eax, ref uint edx, UIntPtr threadAffinityMask);
+        public delegate bool _RdpmcPx(uint index, ref uint eax, ref uint edx, UIntPtr processAffinityMask);
+        public delegate bool _Cpuid(uint index, ref uint eax, ref uint ebx, ref uint ecx, ref uint edx);
+        public delegate bool _CpuidTx(uint index, ref uint eax, ref uint ebx, ref uint ecx, ref uint edx, UIntPtr threadAffinityMask);
+        public delegate bool _CpuidPx(uint index, ref uint eax, ref uint ebx, ref uint ecx, ref uint edx, UIntPtr processAffinityMask);
+        public delegate bool _Rdtsc(ref uint eax, ref uint edx);
+        public delegate bool _RdtscTx(ref uint eax, ref uint edx, UIntPtr threadAffinityMask);
+        public delegate bool _RdtscPx(ref uint eax, ref uint edx, UIntPtr processAffinityMask);
 
         public _IsCpuid IsCpuid;
         public _IsMsr IsMsr;
@@ -143,9 +143,9 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
         public _ReadIoPortWord ReadIoPortWord;
         public _ReadIoPortDword ReadIoPortDword;
 
-        public delegate int _ReadIoPortByteEx(ushort port, ref byte value);
-        public delegate int _ReadIoPortWordEx(ushort port, ref ushort value);
-        public delegate int _ReadIoPortDwordEx(ushort port, ref uint value);
+        public delegate bool _ReadIoPortByteEx(ushort port, ref byte value);
+        public delegate bool _ReadIoPortWordEx(ushort port, ref ushort value);
+        public delegate bool _ReadIoPortDwordEx(ushort port, ref uint value);
         public _ReadIoPortByteEx ReadIoPortByteEx;
         public _ReadIoPortWordEx ReadIoPortWordEx;
         public _ReadIoPortDwordEx ReadIoPortDwordEx;
@@ -157,9 +157,9 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
         public _WriteIoPortWord WriteIoPortWord;
         public _WriteIoPortDword WriteIoPortDword;
 
-        public delegate int _WriteIoPortByteEx(ushort port, byte value);
-        public delegate int _WriteIoPortWordEx(ushort port, ushort value);
-        public delegate int _WriteIoPortDwordEx(ushort port, uint value);
+        public delegate bool _WriteIoPortByteEx(ushort port, byte value);
+        public delegate bool _WriteIoPortWordEx(ushort port, ushort value);
+        public delegate bool _WriteIoPortDwordEx(ushort port, uint value);
         public _WriteIoPortByteEx WriteIoPortByteEx;
         public _WriteIoPortWordEx WriteIoPortWordEx;
         public _WriteIoPortDwordEx WriteIoPortDwordEx;
@@ -177,9 +177,9 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
         public _ReadPciConfigWord ReadPciConfigWord;
         public _ReadPciConfigDword ReadPciConfigDword;
 
-        public delegate int _ReadPciConfigByteEx(uint pciAddress, uint regAddress, ref byte value);
-        public delegate int _ReadPciConfigWordEx(uint pciAddress, uint regAddress, ref ushort value);
-        public delegate int _ReadPciConfigDwordEx(uint pciAddress, uint regAddress, ref uint value);
+        public delegate bool _ReadPciConfigByteEx(uint pciAddress, uint regAddress, ref byte value);
+        public delegate bool _ReadPciConfigWordEx(uint pciAddress, uint regAddress, ref ushort value);
+        public delegate bool _ReadPciConfigDwordEx(uint pciAddress, uint regAddress, ref uint value);
         public _ReadPciConfigByteEx ReadPciConfigByteEx;
         public _ReadPciConfigWordEx ReadPciConfigWordEx;
         public _ReadPciConfigDwordEx ReadPciConfigDwordEx;
@@ -191,9 +191,9 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
         public _WritePciConfigWord WritePciConfigWord;
         public _WritePciConfigDword WritePciConfigDword;
 
-        public delegate int _WritePciConfigByteEx(uint pciAddress, uint regAddress, byte value);
-        public delegate int _WritePciConfigWordEx(uint pciAddress, uint regAddress, ushort value);
-        public delegate int _WritePciConfigDwordEx(uint pciAddress, uint regAddress, uint value);
+        public delegate bool _WritePciConfigByteEx(uint pciAddress, uint regAddress, byte value);
+        public delegate bool _WritePciConfigWordEx(uint pciAddress, uint regAddress, ushort value);
+        public delegate bool _WritePciConfigDwordEx(uint pciAddress, uint regAddress, uint value);
         public _WritePciConfigByteEx WritePciConfigByteEx;
         public _WritePciConfigWordEx WritePciConfigWordEx;
         public _WritePciConfigDwordEx WritePciConfigDwordEx;
@@ -305,17 +305,17 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
             return ReadIoPortDword(port);
         }
 
-        int IDriver.ReadIoPortByteEx(ushort port, ref byte value)
+        bool IDriver.ReadIoPortByteEx(ushort port, ref byte value)
         {
             return ReadIoPortByteEx(port, ref value);
         }
 
-        int IDriver.ReadIoPortWordEx(ushort port, ref ushort value)
+        bool IDriver.ReadIoPortWordEx(ushort port, ref ushort value)
         {
             return ReadIoPortWordEx(port, ref value);
         }
 
-        int IDriver.ReadIoPortDwordEx(ushort port, ref uint value)
+        bool IDriver.ReadIoPortDwordEx(ushort port, ref uint value)
         {
             return ReadIoPortDwordEx(port, ref value);
         }
@@ -335,17 +335,17 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
             WriteIoPortDword(port, value);
         }
 
-        int IDriver.WriteIoPortByteEx(ushort port, byte value)
+        bool IDriver.WriteIoPortByteEx(ushort port, byte value)
         {
             return WriteIoPortByteEx(port, value);
         }
 
-        int IDriver.WriteIoPortWordEx(ushort port, ushort value)
+        bool IDriver.WriteIoPortWordEx(ushort port, ushort value)
         {
             return WriteIoPortWordEx(port, value);
         }
 
-        int IDriver.WriteIoPortDwordEx(ushort port, uint value)
+        bool IDriver.WriteIoPortDwordEx(ushort port, uint value)
         {
             return WriteIoPortDwordEx(port, value);
         }
@@ -375,17 +375,17 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
             return ReadPciConfigDword(pciAddress, regAddress);
         }
 
-        int IDriver.ReadPciConfigByteEx(uint pciAddress, uint regAddress, ref byte value)
+        bool IDriver.ReadPciConfigByteEx(uint pciAddress, uint regAddress, ref byte value)
         {
             return ReadPciConfigByteEx(pciAddress, regAddress, ref value);
         }
 
-        int IDriver.ReadPciConfigWordEx(uint pciAddress, uint regAddress, ref ushort value)
+        bool IDriver.ReadPciConfigWordEx(uint pciAddress, uint regAddress, ref ushort value)
         {
             return ReadPciConfigWordEx(pciAddress, regAddress, ref value);
         }
 
-        int IDriver.ReadPciConfigDwordEx(uint pciAddress, uint regAddress, ref uint value)
+        bool IDriver.ReadPciConfigDwordEx(uint pciAddress, uint regAddress, ref uint value)
         {
             return ReadPciConfigDwordEx(pciAddress, regAddress, ref value);
         }
@@ -405,17 +405,17 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
             WritePciConfigDword(pciAddress, regAddress, value);
         }
 
-        int IDriver.WritePciConfigByteEx(uint pciAddress, uint regAddress, byte value)
+        bool IDriver.WritePciConfigByteEx(uint pciAddress, uint regAddress, byte value)
         {
             return WritePciConfigByteEx(pciAddress, regAddress, value);
         }
 
-        int IDriver.WritePciConfigWordEx(uint pciAddress, uint regAddress, ushort value)
+        bool IDriver.WritePciConfigWordEx(uint pciAddress, uint regAddress, ushort value)
         {
             return WritePciConfigWordEx(pciAddress, regAddress, value);
         }
 
-        int IDriver.WritePciConfigDwordEx(uint pciAddress, uint regAddress, uint value)
+        bool IDriver.WritePciConfigDwordEx(uint pciAddress, uint regAddress, uint value)
         {
             return WritePciConfigDwordEx(pciAddress, regAddress, value);
         }

@@ -26,17 +26,17 @@ namespace RAMSPDToolkit.Windows.Driver
         ushort ReadIoPortWord (ushort port);
         uint   ReadIoPortDword(ushort port);
         
-        int ReadIoPortByteEx (ushort port, ref byte   value);
-        int ReadIoPortWordEx (ushort port, ref ushort value);
-        int ReadIoPortDwordEx(ushort port, ref uint   value);
+        bool ReadIoPortByteEx (ushort port, ref byte   value);
+        bool ReadIoPortWordEx (ushort port, ref ushort value);
+        bool ReadIoPortDwordEx(ushort port, ref uint   value);
 
         void WriteIoPortByte (ushort port, byte   value);
         void WriteIoPortWord (ushort port, ushort value);
         void WriteIoPortDword(ushort port, uint   value);
 
-        int WriteIoPortByteEx (ushort port, byte   value);
-        int WriteIoPortWordEx (ushort port, ushort value);
-        int WriteIoPortDwordEx(ushort port, uint   value);
+        bool WriteIoPortByteEx (ushort port, byte   value);
+        bool WriteIoPortWordEx (ushort port, ushort value);
+        bool WriteIoPortDwordEx(ushort port, uint   value);
 
         uint FindPciDeviceById(ushort vendorId, ushort deviceId, byte index);
         uint FindPciDeviceByClass(byte baseClass, byte subClass, byte programIf, byte index);
@@ -45,16 +45,16 @@ namespace RAMSPDToolkit.Windows.Driver
         ushort ReadPciConfigWord (uint pciAddress, byte regAddress);
         uint   ReadPciConfigDword(uint pciAddress, byte regAddress);
 
-        int ReadPciConfigByteEx (uint pciAddress, uint regAddress, ref byte   value);
-        int ReadPciConfigWordEx (uint pciAddress, uint regAddress, ref ushort value);
-        int ReadPciConfigDwordEx(uint pciAddress, uint regAddress, ref uint   value);
+        bool ReadPciConfigByteEx (uint pciAddress, uint regAddress, ref byte   value);
+        bool ReadPciConfigWordEx (uint pciAddress, uint regAddress, ref ushort value);
+        bool ReadPciConfigDwordEx(uint pciAddress, uint regAddress, ref uint   value);
 
         void WritePciConfigByte (uint pciAddress, byte regAddress, byte   value);
         void WritePciConfigWord (uint pciAddress, byte regAddress, ushort value);
         void WritePciConfigDword(uint pciAddress, byte regAddress, uint   value);
 
-        int WritePciConfigByteEx (uint pciAddress, uint regAddress, byte   value);
-        int WritePciConfigWordEx (uint pciAddress, uint regAddress, ushort value);
-        int WritePciConfigDwordEx(uint pciAddress, uint regAddress, uint   value);
+        bool WritePciConfigByteEx (uint pciAddress, uint regAddress, byte   value);
+        bool WritePciConfigWordEx (uint pciAddress, uint regAddress, ushort value);
+        bool WritePciConfigDwordEx(uint pciAddress, uint regAddress, uint   value);
     }
 }

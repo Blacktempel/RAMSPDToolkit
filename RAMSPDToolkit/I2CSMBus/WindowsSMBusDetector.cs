@@ -223,7 +223,7 @@ namespace RAMSPDToolkit.I2CSMBus
             //Read base address
             var result = DriverAccess.ReadPciConfigDwordEx(pciAddress, pciRegisterAddress, ref smba);
 
-            if (result == 0)
+            if (!result)
             {
                 return false;
             }

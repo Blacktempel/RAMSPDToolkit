@@ -64,7 +64,7 @@ namespace RAMSPDToolkit.Windows.Driver
             return DriverManager.Driver.ReadPciConfigWord(pciAddress, regAddress);
         }
 
-        public static int ReadPciConfigDwordEx(uint pciAddress, uint regAddress, ref uint value)
+        public static bool ReadPciConfigDwordEx(uint pciAddress, uint regAddress, ref uint value)
         {
             return DriverManager.Driver.ReadPciConfigDwordEx(pciAddress, regAddress, ref value);
         }
