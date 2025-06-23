@@ -175,9 +175,6 @@ namespace ConsoleOutputTest
                 throw new Exception($"{nameof(TryReadSPDData)} {nameof(spd)} is null. Provided generic type was '{typeof(TAccessor).FullName}'.");
             }
 
-            //Get current page data
-            var pageData = spd.GetPageData();
-
             /*
 
             //We can manually set the page to get what data we want
@@ -196,7 +193,7 @@ namespace ConsoleOutputTest
 
             */
 
-            Log($"Page Data                            : {pageData}");
+            Log($"Page Data                            : {spd.PageData}");
             Log($"SPD Revision                         : 0x{spd.SPDRevision():X2}");
             Log($"Memory Type                          : {spd.MemoryType()}"  );
 

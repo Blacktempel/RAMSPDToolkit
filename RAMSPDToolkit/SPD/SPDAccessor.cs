@@ -47,6 +47,26 @@ namespace RAMSPDToolkit.SPD
 
         #endregion
 
+        #region Properties
+
+        /// <summary>
+        /// Index / slot of RAM stick, starting at zero (0).
+        /// </summary>
+        public byte Index => (byte)(_Address - SPDConstants.SPD_BEGIN);
+
+        /// <summary>
+        /// <inheritdoc cref="SMBusInterface.HasSPDWriteProtection"/>
+        /// </summary>
+        public bool HasSPDWriteProtection => _Bus.HasSPDWriteProtection;
+
+        /// <summary>
+        /// Gets page data (flag enumeration) which identifies which memory page is set and what data can be retrieved from it.<br/>
+        /// This becomes a great functionality if having a DDR5 system with <see cref="SMBusInterface.HasSPDWriteProtection"/> enabled.
+        /// </summary>
+        public PageData PageData => _PageData;
+
+        #endregion
+
         #region Protected
 
         protected static int RetryReadByteData(SMBusInterface bus, byte address, byte what, int retries, out byte byteData)
@@ -271,16 +291,6 @@ namespace RAMSPDToolkit.SPD
         public virtual void Update(int retries = SPDConstants.SPD_DATA_RETRIES)
         {
             //Nothing in base class
-        }
-
-        /// <summary>
-        /// Get page data which identifies which memory page is set and what data can be retrieved from it.<br/>
-        /// This becomes a great functionality if having a DDR5 system with <see cref="SMBusInterface.HasSPDWriteProtection"/> enabled.
-        /// </summary>
-        /// <returns>Flag enumeration to identify which data is available at current page.</returns>
-        public PageData GetPageData()
-        {
-            return _PageData;
         }
 
         /// <summary>

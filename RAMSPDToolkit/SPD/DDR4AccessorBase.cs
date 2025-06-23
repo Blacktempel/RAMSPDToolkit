@@ -163,7 +163,7 @@ namespace RAMSPDToolkit.SPD
                 {
                     SetPage(item.Key);
 
-                    return GetPageData().HasFlag(pageData);
+                    return PageData.HasFlag(pageData);
                 }
             }
 

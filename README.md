@@ -124,6 +124,10 @@ Yes, you can implement your own driver via our IDriver interface.<br/>
 You just have to assign an instance to RAMSPDToolkit and it will use your implementation instead.<br/>
 Please be sure to use a well tested driver.
 
+### NDD Build / Package (No Default Driver[s])
+We also provide a version without any internal driver implementation or binaries.
+You can change compilation configuration for that or use the NDD package.
+
 ## License
 RAMSPDToolkit is free and open source software licensed under MPL 2.0.<br/>
 You can use it in private and commercial projects.<br/>
