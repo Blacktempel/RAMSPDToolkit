@@ -3,6 +3,7 @@
 [![Build master](https://github.com/Blacktempel/RAMSPDToolkit/actions/workflows/master.yml/badge.svg)](https://github.com/Blacktempel/RAMSPDToolkit/actions/workflows/master.yml)
 [![Nuget](https://img.shields.io/nuget/v/RAMSPDToolkit?label=NuGet)](https://www.nuget.org/packages/RAMSPDToolkit/)
 [![Nuget](https://img.shields.io/nuget/dt/RAMSPDToolkit?label=NuGet-Downloads)](https://www.nuget.org/packages/RAMSPDToolkit/)
+[![Nuget](https://img.shields.io/nuget/dt/RAMSPDToolkit-NDD?label=NuGet-Downloads-NDD)](https://www.nuget.org/packages/RAMSPDToolkit-NDD/)
 
 A toolkit for accessing RAMs SPD. Primarily used for reading temperature and data from SPD.<br/>
 Reading from SPD is standardized by [JEDEC](https://www.jedec.org/), for the most part.<br/>
