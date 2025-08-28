@@ -73,10 +73,9 @@ namespace RAMSPDToolkit.I2CSMBus
 
         /// <summary>
         /// This property is to determine if SPD Write Protection is enabled.<br/>
-        /// If it is enabled, a page change for DDR5 is not possible as a page change requires a write to SMBus at a write protected address.<br/>
+        /// If it is enabled, writing to SPD is not possible.<br/>
         /// Currently it is known to be enabled on newer Intel CPU systems.<br/>
-        /// Allowing SPD writes can usually be changed in BIOS settings by the PCs user.<br/>
-        /// For DDR4 systems, page change is possible as the page address is not within the protected memory range.
+        /// Allowing SPD writes can usually be changed in BIOS settings by the PCs user.
         /// </summary>
         public bool HasSPDWriteProtection { get; protected set; } = false;
 
