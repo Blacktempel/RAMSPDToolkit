@@ -108,7 +108,7 @@ namespace RAMSPDToolkit.Utilities
             ulong mask = ((1UL << length) - 1UL);
 
             ulong result = (val >> fromBit) & mask;
-            return (T)(object)result;
+            return (T)Convert.ChangeType(result, typeof(T));
         }
 #endif
     }
