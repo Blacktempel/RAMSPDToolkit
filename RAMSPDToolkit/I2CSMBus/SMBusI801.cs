@@ -80,6 +80,11 @@ namespace RAMSPDToolkit.I2CSMBus
         public ushort SMBSLVCMD  => (ushort)(17u + I801_SMBA); /* ICH3 and later */
         public ushort SMBNTFDADD => (ushort)(20u + I801_SMBA); /* ICH3 and later */
 
+        /// <summary>
+        /// Timeout for WaitIntr in milliseconds. Default is 0.25 and maximum 1000.
+        /// </summary>
+        public double WaitIntrTimeout { get; set; } = 0.25;
+
         #endregion
 
         #region I2CSMBusInterface
@@ -209,6 +214,8 @@ namespace RAMSPDToolkit.I2CSMBus
             //Check if write protection is enabled
             intelBus.HasSPDWriteProtection = (hostConfig & IntelConstants.SMBHSTCFG_SPD_WD) != 0;
 
+            LogSimple.LogTrace($"{nameof(HasSPDWriteProtection)} = {intelBus.HasSPDWriteProtection}");
+
             SMBusManager.AddSMBus(intelBus);
         }
 
@@ -308,6 +315,18 @@ namespace RAMSPDToolkit.I2CSMBus
 
                     xact = IntelConstants.I801_WORD_DATA;
                     break;
+                case I2CConstants.I2C_SMBUS_PROC_CALL:
+                    DriverAccess.WriteIoPortByte(SMBHSTADD, (byte)(((addr & 0x7F) << 1) | (read_write & 0x01)));
+                    DriverAccess.WriteIoPortByte(SMBHSTCMD, command);
+
+                    if (data.Word >= 0)
+                    {
+                        DriverAccess.WriteIoPortByte(SMBHSTDAT0, (byte)(data.Word & 0xFF));
+                        DriverAccess.WriteIoPortByte(SMBHSTDAT1, (byte)((data.Word & 0xFF00) >> 8));
+                    }
+
+                    xact = IntelConstants.I801_PROC_CALL;
+                    break;
                 case I2CConstants.I2C_SMBUS_BLOCK_DATA:
                     DriverAccess.WriteIoPortByte(SMBHSTADD, (byte)(((addr & 0x7F) << 1) | (read_write & 0x01)));
                     DriverAccess.WriteIoPortByte(SMBHSTCMD, command);
@@ -382,6 +401,7 @@ namespace RAMSPDToolkit.I2CSMBus
                     data.ByteData = DriverAccess.ReadIoPortByte(SMBHSTDAT0);
                     break;
                 case IntelConstants.I801_WORD_DATA:
+                case IntelConstants.I801_PROC_CALL:
                     data.Word = (ushort)(DriverAccess.ReadIoPortByte(SMBHSTDAT0) + (DriverAccess.ReadIoPortByte(SMBHSTDAT1) << 8));
                     break;
             }
@@ -621,29 +641,39 @@ namespace RAMSPDToolkit.I2CSMBus
             int timeout = 0;
             int status;
 
-            var sleepTime = TimeSpan.FromMilliseconds(0.25);
+            var sleepTime = TimeSpan.FromMilliseconds(WaitIntrTimeout);
 
             do
             {
-                /* We will always wait for a fraction of a second! */
-                Thread.Sleep(sleepTime);
+                if (WaitIntrTimeout > 0)
+                {
+                    if (WaitIntrTimeout > 1000)
+                    {
+                        WaitIntrTimeout = 1000;
+                    }
+
+                    Thread.Sleep(sleepTime);
+                }
 
                 status = DriverAccess.ReadIoPortByte(SMBHSTSTS);
-            } while
-            (
-                (
-                    (status & IntelConstants.SMBHSTSTS_HOST_BUSY) != 0 ||
-                    (status & (IntelConstants.STATUS_ERROR_FLAGS | IntelConstants.SMBHSTSTS_INTR)) == 0
-                ) &&
-                (timeout++ < SharedConstants.MAX_RETRIES)
-            );
 
-            if (timeout > SharedConstants.MAX_RETRIES)
-            {
-                return -SharedConstants.ETIMEDOUT;
-            }
+                if ((status & IntelConstants.SMBHSTSTS_HOST_BUSY) == 0)
+                {
+                    if ((status & IntelConstants.STATUS_ERROR_FLAGS) != 0)
+                    {
+                        return status & (IntelConstants.STATUS_ERROR_FLAGS | IntelConstants.SMBHSTSTS_INTR);
+                    }
 
-            return status & (IntelConstants.STATUS_ERROR_FLAGS | IntelConstants.SMBHSTSTS_INTR);
+                    if ((status & IntelConstants.SMBHSTSTS_INTR) != 0)
+                    {
+                        return status & IntelConstants.SMBHSTSTS_INTR;
+                    }
+                }
+
+                ++timeout;
+            } while (timeout < SharedConstants.MAX_RETRIES);
+
+            return -SharedConstants.ETIMEDOUT;
         }
 
         #endregion

@@ -10,6 +10,7 @@
  */
 
 using RAMSPDToolkit.I2CSMBus.Interop;
+using RAMSPDToolkit.PCI;
 using System.Runtime.InteropServices;
 
 namespace RAMSPDToolkit.I2CSMBus
@@ -222,6 +223,35 @@ namespace RAMSPDToolkit.I2CSMBus
             data.Word = value;
 
             return i2c_smbus_xfer_call(addr, I2CConstants.I2C_SMBUS_WRITE, command, I2CConstants.I2C_SMBUS_WORD_DATA, data);
+        }
+
+        /// <summary>
+        /// Writes a word (<see cref="ushort"/>) at given address with specified command and reads a word from same address.
+        /// </summary>
+        /// <param name="addr">Address to write to and read from.</param>
+        /// <param name="read_write">Specifies if read or write is executed.</param>
+        /// <param name="command">Command for operation. This is usually an offset value.</param>
+        /// <param name="value">Value to write.</param>
+        /// <returns>When the return value is negative, it is an error code. If positive, the value returned by SMBus call.</returns>
+        public int i2c_smbus_proc_call(byte addr, byte read_write, byte command, ushort value)
+        {
+            if (!HasSPDWriteProtection || PCIVendor != PCIConstants.PCI_VENDOR_INTEL)
+            {
+                return 0;
+            }
+
+            var data = new SMBusData();
+            data.Word = value;
+
+            var wordData = i2c_smbus_xfer_call(addr, read_write, command, I2CConstants.I2C_SMBUS_PROC_CALL, data);
+
+            if (wordData < 0)
+            {
+                return wordData;
+            }
+
+            //Proc call returns a word read from the address after writing to its contents
+            return data.Word;
         }
 
         /// <summary>

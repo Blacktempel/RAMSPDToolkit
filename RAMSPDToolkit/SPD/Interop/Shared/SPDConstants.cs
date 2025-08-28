@@ -34,7 +34,7 @@ namespace RAMSPDToolkit.SPD.Interop.Shared
         /// <summary>
         /// Default value for amount of retries to read from thermal sensor, if SMBus is busy on read.
         /// </summary>
-        public const byte SPD_TS_RETRIES = 5;
+        public const byte SPD_TS_RETRIES = 12;
 
         /// <summary>
         /// Default value for amount of retries to read SPD data.
@@ -42,7 +42,7 @@ namespace RAMSPDToolkit.SPD.Interop.Shared
         public const byte SPD_DATA_RETRIES = 5;
 
         /// <summary>
-        /// Default value for amount of retries to read thermal configuration data, if SMBus is busy on read.
+        /// Default value for amount of retries to read configuration data, if SMBus is busy on read.
         /// </summary>
         public const byte SPD_CFG_RETRIES = 50;
     }

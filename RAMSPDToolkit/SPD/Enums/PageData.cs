@@ -24,7 +24,7 @@ namespace RAMSPDToolkit.SPD.Enums
         /// </summary>
         ThermalData = 0x1,
         MemoryType  = 0x2,
-        SPDRevision = 0x3,
+        SPDRevision = 0x4,
 
         ModuleManufacturerID        =  0x1000,
         ModuleManufacturingLocation =  0x2000,

@@ -65,5 +65,51 @@ namespace RAMSPDToolkit.Utilities
         {
             return (byte)(value & ~(1 << bitIndexToUnset));
         }
+
+        /// <summary>
+        /// Get specified bit range as value.
+        /// </summary>
+        /// <typeparam name="T">Integer type.</typeparam>
+        /// <param name="value">Value to get specific bits from.</param>
+        /// <param name="fromBit">First bit in range to get value for.</param>
+        /// <param name="toBit">Last bit in range to get value for.</param>
+        /// <returns>Returns extracted value.</returns>
+#if NET8_0_OR_GREATER
+        public static T GetBits<T>(T value, int fromBit, int toBit)
+            where T : System.Numerics.IBinaryInteger<T>
+        {
+            if (fromBit < 0 || toBit < fromBit)
+                throw new ArgumentOutOfRangeException();
+
+            int bitSize = int.CreateChecked(T.PopCount(~T.Zero));
+
+            if (toBit >= bitSize)
+                throw new ArgumentOutOfRangeException();
+
+            int length = toBit - fromBit + 1;
+            T mask = (T.One << length) - T.One;
+
+            return (value >> fromBit) & mask;
+        }
+#else
+        public static T GetBits<T>(T value, int fromBit, int toBit)
+            where T : struct
+        {
+            if (fromBit < 0 || toBit < fromBit)
+                throw new ArgumentOutOfRangeException(nameof(fromBit));
+
+            ulong val = Convert.ToUInt64(value);
+            int bitSize = sizeof(ulong) * 8;
+
+            if (toBit >= bitSize)
+                throw new ArgumentOutOfRangeException(nameof(toBit));
+
+            int length = toBit - fromBit + 1;
+            ulong mask = ((1UL << length) - 1UL);
+
+            ulong result = (val >> fromBit) & mask;
+            return (T)(object)result;
+        }
+#endif
     }
 }

@@ -79,7 +79,7 @@ namespace RAMSPDToolkit.I2CSMBus
                     smbusDetectMethods.Add(WindowsSMBusDetector.DetectSMBuses);
                 }
 
-                smbusDetectMethods.Add(SMBusNVAPI  .SMBusDetect);
+                //smbusDetectMethods.Add(SMBusNVAPI  .SMBusDetect);
                 smbusDetectMethods.Add(SMBusNCT6775.SMBusDetect);
             }
             else if (OS.IsLinux())

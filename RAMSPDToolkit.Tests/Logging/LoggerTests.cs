@@ -5,6 +5,8 @@ namespace RAMSPDToolkit.Tests.Logging
     [TestClass]
     public class LoggerTests
     {
+        static object _Lock = new object();
+
         LogLevel _LogLevel = LogLevel.Debug;
 
         [TestMethod]
@@ -14,16 +16,21 @@ namespace RAMSPDToolkit.Tests.Logging
             var message1 = "Add Message 1";
             var message2 = "Add Message 2";
 
-            Logger.Instance.IsEnabled = true;
-            Logger.Instance.LogLevel = _LogLevel;
+            string str;
 
-            Assert.AreEqual(_LogLevel, Logger.Instance.LogLevel);
+            lock (_Lock)
+            {
+                Logger.Instance.IsEnabled = true;
+                Logger.Instance.LogLevel = _LogLevel;
 
-            Logger.Instance.Add(_LogLevel, message0, DateTime.Now);
-            Logger.Instance.Add(_LogLevel, message1);
-            Logger.Instance.Add(new LogItem(_LogLevel, message2, DateTime.Now));
+                Assert.AreEqual(_LogLevel, Logger.Instance.LogLevel);
 
-            var str = Logger.Instance.ToString();
+                Logger.Instance.Add(_LogLevel, message0, DateTime.Now);
+                Logger.Instance.Add(_LogLevel, message1);
+                Logger.Instance.Add(new LogItem(_LogLevel, message2, DateTime.Now));
+
+                str = Logger.Instance.ToString();
+            }
 
             Assert.IsTrue(str.Contains(message0));
             Assert.IsTrue(str.Contains(message1));
@@ -35,20 +42,33 @@ namespace RAMSPDToolkit.Tests.Logging
         {
             var message = "Remove Message";
 
-            Logger.Instance.IsEnabled = true;
-            Logger.Instance.LogLevel = _LogLevel;
+            string str;
 
-            Logger.Instance.Add(_LogLevel, message, DateTime.Now);
-            Logger.Instance.Remove(_LogLevel);
+            lock (_Lock)
+            {
+                Logger.Instance.IsEnabled = true;
+                Logger.Instance.LogLevel = _LogLevel;
 
-            var str = Logger.Instance.ToString();
+                Logger.Instance.Add(_LogLevel, message, DateTime.Now);
+                Logger.Instance.Remove(_LogLevel);
+
+                str = Logger.Instance.ToString();
+            }
+
             Assert.IsTrue(!str.Contains(message));
         }
 
         [TestMethod]
         public void GetStringForLogLevel()
         {
-            Assert.AreEqual("[DEBUG]", Logger.GetStringForLogLevel(_LogLevel));
+            string str;
+
+            lock (_Lock)
+            {
+                str = Logger.GetStringForLogLevel(_LogLevel);
+            }
+
+            Assert.AreEqual("[DEBUG]", str);
         }
     }
 }

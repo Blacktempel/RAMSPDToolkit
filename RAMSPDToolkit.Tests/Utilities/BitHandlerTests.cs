@@ -39,5 +39,16 @@ namespace RAMSPDToolkit.Tests.Utilities
 
             Assert.AreEqual(expected, BitHandler.UnsetBit(b, 4));
         }
+
+        [TestMethod]
+        public void GetBits()
+        {
+            const byte b = 82;
+            const byte expected01 = 2;
+            const byte expected47 = 5;
+
+            Assert.AreEqual(expected01, BitHandler.GetBits(b, 0, 1));
+            Assert.AreEqual(expected47, BitHandler.GetBits(b, 4, 7));
+        }
     }
 }

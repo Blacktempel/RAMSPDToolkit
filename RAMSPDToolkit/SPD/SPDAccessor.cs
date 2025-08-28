@@ -215,6 +215,7 @@ namespace RAMSPDToolkit.SPD
         /// Get module manufacturing date.
         /// </summary>
         /// <returns>Read module manufacturing date.</returns>
+        /// <remarks>The returned date marks beginning (<see cref="DayOfWeek.Monday"/>) of the week this module has been manufactured.</remarks>
         public abstract DateTime? ModuleManufacturingDate();
 
         /// <summary>
@@ -331,6 +332,15 @@ namespace RAMSPDToolkit.SPD
             }
 
             return null;
+        }
+
+        #endregion
+
+        #region Protected
+
+        protected virtual byte At(ushort address, bool changePage)
+        {
+            return 0;
         }
 
         #endregion

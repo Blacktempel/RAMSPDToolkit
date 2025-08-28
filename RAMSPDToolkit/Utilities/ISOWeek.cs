@@ -24,6 +24,11 @@ namespace RAMSPDToolkit.Utilities
         public static DateTime ToDateTime(int year, int week)
         {
 #if NET8_0_OR_GREATER
+            if (week < 1 || week > 53)
+            {
+                return DateTime.MinValue;
+            }
+
             return System.Globalization.ISOWeek.ToDateTime(year, week, DayOfWeek.Monday);
 #else
             var firstJan = new DateTime(year, 1, 1);

@@ -31,6 +31,8 @@ namespace RAMSPDToolkit.SPD.Interop
 
         public const byte SPD_DDR5_DEVICE_CAPABILITY = 0x05;
 
+        public const byte SPD_DDR5_WRITE_RECOVERY_TIME = 0x06;
+
         public const byte SPD_DDR5_THERMAL_SENSOR_ENABLED                           = 0x1A;
         public const byte SPD_DDR5_THERMAL_SENSOR_HIGH_LIMIT_CONFIGURATION          = 0x1C;
         public const byte SPD_DDR5_THERMAL_SENSOR_LOW_LIMIT_CONFIGURATION           = 0x1E;
@@ -60,5 +62,64 @@ namespace RAMSPDToolkit.SPD.Interop
         public const byte SPD_DDR5_MANUFACTURER_CONTINUATION_CODE_ODD_PARITY_BIT = 7;
 
         public const byte SPD_DDR5_MODULE_PART_NUMBER_UNUSED = 0x20;
+
+        // Time base defaults as per JEDEC DDR5 specification
+        public const decimal SPD_DDR5_TIMEBASE_MTB = 1.0M;  // 1 ns Medium Time Base
+        public const decimal SPD_DDR5_TIMEBASE_FTB = 0.001M; // 0.001 ns Fine Time Base
+
+        // Registers related to tCKAVGmin
+        public const ushort SPD_DDR5_MIN_CYCLE_TIME = 0x14; // Start address of tCKAVGmin (FTB)
+
+        // Registers related to tCKAVGmax
+        public const ushort SPD_DDR5_MAX_CYCLE_TIME = 0x16; // Start address of tCKAVGmax (FTB)
+
+        // Registers related to CAS Latencies
+        public const ushort SPD_DDR5_SUPPORTED_CAS_LATENCIES_START = 0x18; // Start address of supported CAS latencies
+        public const ushort SPD_DDR5_SUPPORTED_CAS_LATENCIES_END   = 0x1C; // End address of supported CAS latencies
+        public const int SPD_DDR5_LOWEST_SUPPORTED_CAS_LATENCY     = 20;   // Lowest supported CAS latency for DDR5
+
+        // Registers related to tAA timings
+        public const ushort SPD_DDR5_MIN_CAS_LATENCY = 0x1E; // Start address of tAA timings (FTB)
+
+        // Registers related to tRCD timings
+        public const ushort SPD_DDR5_MIN_RAS_TO_CAS_DELAY = 0x20; // Start address of tRCD timings (FTB)
+
+        // Registers related to tRP timings
+        public const ushort SPD_DDR5_MIN_ROW_PRECHARGE_DELAY = 0x22; // Start address of tRP timings (FTB)
+
+        // Registers related to tRAS timings
+        public const ushort SPD_DDR5_MIN_ACTIVE_TO_PRECHARGE_DELAY = 0x24; // Start address of tRAS timings (FTB)
+
+        // Registers related to tRC timings
+        public const ushort SPD_DDR5_MIN_ACTIVE_TO_ACTIVE_DELAY = 0x26; // Start address of tRC timings (FTB)
+
+        // Registers related to tWR timings
+        public const ushort SPD_DDR5_MIN_WRITE_RECOVERY_TIME = 0x28; // Start address of tWR timings (FTB)
+
+        // Registers related to tRFC timings
+        public const ushort SPD_DDR5_NORMAL_REFRESH_RECOVERY_TIME                       = 0x2A; // Start address of tRFC1 timings (MTB)
+        public const ushort SPD_DDR5_FINE_GRANULARITY_REFRESH_RECOVERY_TIME             = 0x2C; // Start address of tRFC2 timings (MTB)
+        public const ushort SPD_DDR5_SAME_BANK_REFRESH_RECOVERY_TIME                    = 0x2E; // Start address of tRFCsb timings (MTB)
+        public const ushort SPD_DDR5_NORMAL_REFRESH_RECOVERY_TIME_DIFFRANK              = 0x30; // Start address of tRFC1_dlr timings (MTB)
+        public const ushort SPD_DDR5_FINE_GRANULARITY_REFRESH_RECOVERY_TIME_DIFFRANK    = 0x32; // Start address of tRFC2_dlr timings (MTB)
+        public const ushort SPD_DDR5_SAME_BANK_REFRESH_RECOVERY_TIME_DIFFRANK           = 0x34; // Start address of tRFCsb_dlr timings (MTB)
+
+        // Registers related to tRRD_L timings
+        public const ushort SPD_DDR5_ACTIVATE_TO_ACTIVATE_DELAY_SAME = 0x46; // Start address of tRRD_L timings (FTB)
+
+        // Registers related to tCCD (Command to Command delays) timings
+        public const ushort SPD_DDR5_READ_TO_READ_DELAY_SAME_GROUP              = 0x49; // Start address of tCCD_L timings (FTB)
+        public const ushort SPD_DDR5_WRITE_TO_WRITE_DELAY_SAME_GROUP            = 0x4C; // Start address of tCCD_L_WR timings (FTB)
+        public const ushort SPD_DDR5_WRITE_TO_WRITE_DELAY_SAME_GROUP_SECOND     = 0x4F; // Start address of tCCD_L_WR2 timings (FTB)
+        public const ushort SPD_DDR5_WRITE_TO_READ_DELAY_DIFF_GROUP             = 0x58; // Start address of tCCD_S_WTR timings (FTB)
+        public const ushort SPD_DDR5_READ_TO_READ_DELAY_DIFF_BANK_SAME_GROUP    = 0x5E; // Start address of tCCD_M timings (FTB)
+        public const ushort SPD_DDR5_WRITE_TO_WRITE_DELAY_DIFF_BANK_SAME_GROUP  = 0x61; // Start address of tCCD_M_WR timings (FTB)
+        public const ushort SPD_DDR5_WRITE_TO_READ_DELAY_DIFF_BANK_SAME_GROUP   = 0x64; // Start address of tCCD_M_WTR timings (FTB)
+
+        // Registers related to tFAW timings
+        public const ushort SPD_DDR5_FOUR_ACTIVATE_WINDOW = 0x52; // Start address of tFAW timings (FTB)
+
+        // Registers related to tRTP timings
+        public const ushort SPD_DDR5_READ_TO_PRECHARGE_DELAY = 0x5B; // Start address of tRTP timings (FTB)
     }
 }

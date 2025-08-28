@@ -20,6 +20,8 @@ using RAMSPDToolkit.Utilities;
 using RAMSPDToolkit.Windows.Driver;
 using RAMSPDToolkit.Windows.Driver.Implementations;
 
+using OS = RAMSPDToolkit.Software.OperatingSystem;
+
 namespace ConsoleOutputTest
 {
     public class TestClass
@@ -148,7 +150,7 @@ namespace ConsoleOutputTest
                 Log($"{nameof(DDR4Accessor)} available at {i:X2}.");
 
                 //DDR4 set page address is not within the write protected range, so we can safely ignore that
-                TryReadSPDData<DDR4Accessor>(bus, i, true);
+                TryReadSPDData<DDR4Accessor>(bus, i);
             }
         }
 
@@ -160,11 +162,11 @@ namespace ConsoleOutputTest
                 Log($"{nameof(DDR5Accessor)} available at {i:X2}.");
 
                 //DDR5 set page is within write protection, so we cannot read everything
-                TryReadSPDData<DDR5Accessor>(bus, i, false);
+                TryReadSPDData<DDR5Accessor>(bus, i);
             }
         }
 
-        void TryReadSPDData<TAccessor>(SMBusInterface bus, byte i, bool ignoreSPDWriteProtection)
+        void TryReadSPDData<TAccessor>(SMBusInterface bus, byte i)
             where TAccessor : SPDAccessor, IThermalSensor
         {
             //Create an instance of our accessor
@@ -184,12 +186,15 @@ namespace ConsoleOutputTest
                 Log($"Module Serial Number: {spd.ModulePartNumber()}");
             }
 
-            //For DDR4 systems there is no need to use ChangePage (it can be used though),
-            //as there is no write protection for the address where we can change the current page.
+            //For DDR4 on both Windows and Linux the write protection does not include the address for page change,
+            //so pages can be changed normally. You can use ChangePage, but don't have to.
 
             //For DDR5 systems the page address is write protected, if enabled.
-            //There we have to either test the page change via this method, or ensure beforehand that the write protection is disabled.
-            //This can be checked via the property "HasSPDWriteProtection" in SMBus.
+            //A workaround for Intel Write Protection, for page change only, is PROC_CALL.
+            //This has been implemented and currently works on Windows.
+            //The Linux Kernel (i2c-i801.c) does currently not support it the way it is required.
+
+            //You can always check "HasSPDWriteProtection" in SMBus if write protection is enabled.
 
             */
 
@@ -197,7 +202,7 @@ namespace ConsoleOutputTest
             Log($"SPD Revision                         : 0x{spd.SPDRevision():X2}");
             Log($"Memory Type                          : {spd.MemoryType()}"  );
 
-            if (ignoreSPDWriteProtection || !bus.HasSPDWriteProtection)
+            if (OS.IsWindows() || (OS.IsLinux() && !bus.HasSPDWriteProtection))
             {
                 Log($"Module Manufacturer Continuation Code: 0x{spd.ModuleManufacturerContinuationCode():X2}");
                 Log($"Module Manufacturer ID Code          : 0x{spd.ModuleManufacturerIDCode():X2}");
@@ -215,10 +220,11 @@ namespace ConsoleOutputTest
 
                 Log($"");
             }
-            else
+            else if (OS.IsLinux() && bus.HasSPDWriteProtection)
             {
                 Log($"+++++ SPD Write Protection is active. SPD-Page cannot be set and some data can therefore not be read. +++++");
                 Log($"+++++ Please disable SPD Write Protection in BIOS and try again. +++++");
+                Log($"+++++ Unfortunately Linux does currently not support page change via PROC_CALL while SPD Write Protection is active. +++++");
             }
 
             if (spd.UpdateTemperature())

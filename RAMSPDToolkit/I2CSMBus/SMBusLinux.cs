@@ -259,6 +259,8 @@ namespace RAMSPDToolkit.I2CSMBus
 
                                     bus.HasSPDWriteProtection = CheckHasSPDWriteProtection(pciVendor, pciPath);
 
+                                    LogSimple.LogTrace($"{nameof(HasSPDWriteProtection)} = {bus.HasSPDWriteProtection}");
+
                                     SMBusManager.AddSMBus(bus);
                                 }
                             }

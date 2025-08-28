@@ -10,9 +10,12 @@
  */
 
 using RAMSPDToolkit.I2CSMBus;
+using RAMSPDToolkit.I2CSMBus.Interop;
+using RAMSPDToolkit.I2CSMBus.Interop.Intel;
 using RAMSPDToolkit.Logging;
 using RAMSPDToolkit.SPD.Interop;
 using RAMSPDToolkit.SPD.Interop.Shared;
+using RAMSPDToolkit.SPD.Timings;
 using RAMSPDToolkit.Utilities;
 
 namespace RAMSPDToolkit.SPD
@@ -39,6 +42,8 @@ namespace RAMSPDToolkit.SPD
                 //For DDR5 the value is fixed
                 TemperatureResolution = DDR5Constants.SPD_DDR5_TEMPERATURE_RESOLUTION;
             }
+
+            SDRAMTimings = new DDR5Timings(this);
         }
 
         #endregion
@@ -64,6 +69,9 @@ namespace RAMSPDToolkit.SPD
         /// Thermal sensor temperature status.
         /// </summary>
         public ThermalSensorStatus ThermalSensorStatus { get; private set; }
+
+        /// <inheritdoc cref="DDR5Timings"/>
+        public DDR5Timings SDRAMTimings { get; private set; }
 
         #endregion
 
@@ -91,7 +99,7 @@ namespace RAMSPDToolkit.SPD
             //Page is off
             if (page != 0)
             {
-                //We can change the page
+                //We can change the page normally
                 if (!bus.HasSPDWriteProtection)
                 {
                     //Change page to 0
@@ -107,8 +115,16 @@ namespace RAMSPDToolkit.SPD
                 }
                 else //Write protection is active
                 {
-                    LogSimple.LogWarn($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} page is off. Cannot change due to {nameof(bus.HasSPDWriteProtection)} being active.");
-                    return false;
+                    LogSimple.LogWarn($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} page is off and {nameof(bus.HasSPDWriteProtection)} is active. Trying to change page via {nameof(IntelConstants.I801_PROC_CALL)}.");
+
+                    //Change page to 0
+                    status = bus.i2c_smbus_proc_call(address, I2CConstants.I2C_SMBUS_READ, DDR5Constants.SPD_DDR5_MREG_VIRTUAL_PAGE, 0);
+
+                    if (status < 0)
+                    {
+                        LogSimple.LogWarn($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to change current page due to error {page}.");
+                        return false;
+                    }
                 }
             }
 
@@ -148,14 +164,22 @@ namespace RAMSPDToolkit.SPD
 
         public override byte At(ushort address)
         {
+            return At(address, true);
+        }
+
+        protected override byte At(ushort address, bool changePage)
+        {
             //Ensure address is valid
             if (address >= DDR5Constants.SPD_DDR5_EEPROM_LENGTH)
             {
                 return 0xFF;
             }
 
-            //Switch to the page containing address
-            SetPage((byte)(address >> DDR5Constants.SPD_DDR5_EEPROM_PAGE_SHIFT));
+            if (changePage)
+            {
+                //Switch to the page containing address
+                SetPage((byte)(address >> DDR5Constants.SPD_DDR5_EEPROM_PAGE_SHIFT));
+            }
 
             //Calculate offset
             byte offset = (byte)((address & DDR5Constants.SPD_DDR5_EEPROM_PAGE_MASK) | 0x80);

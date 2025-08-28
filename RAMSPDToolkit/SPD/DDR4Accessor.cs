@@ -14,6 +14,7 @@ using RAMSPDToolkit.I2CSMBus.Interop.Shared;
 using RAMSPDToolkit.Logging;
 using RAMSPDToolkit.SPD.Interop;
 using RAMSPDToolkit.SPD.Interop.Shared;
+using RAMSPDToolkit.SPD.Timings;
 using RAMSPDToolkit.Utilities;
 
 namespace RAMSPDToolkit.SPD
@@ -41,6 +42,8 @@ namespace RAMSPDToolkit.SPD
                 //We want these values to be read, just wait until SMBus is not busy
                 ReadThermalSensorConfiguration(SPDConstants.SPD_CFG_RETRIES);
             }
+
+            SDRAMTimings = new DDR4Timings(this);
         }
 
         #endregion
@@ -82,6 +85,9 @@ namespace RAMSPDToolkit.SPD
         /// The lower byte holds the revision value which is vendor-specific.
         /// </summary>
         public ushort ThermalSensorDeviceID { get; private set; } = ushort.MaxValue;
+
+        /// <inheritdoc cref="DDR4Timings"/>
+        public DDR4Timings SDRAMTimings { get; private set; }
 
         #endregion
 
