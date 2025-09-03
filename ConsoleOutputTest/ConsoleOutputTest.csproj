@@ -8,8 +8,8 @@
     <ApplicationManifest>Resources\app.manifest</ApplicationManifest>
     <Description>Sample application for RAMSPDToolkit.</Description>
     <Copyright>Florian K.</Copyright>
-    <AssemblyVersion>1.2.1</AssemblyVersion>
-    <FileVersion>1.2.1</FileVersion>
+    <AssemblyVersion>1.2.2</AssemblyVersion>
+    <FileVersion>1.2.2</FileVersion>
     <Version>$(AssemblyVersion)</Version>
     <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
