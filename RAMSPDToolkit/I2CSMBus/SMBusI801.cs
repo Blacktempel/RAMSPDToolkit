@@ -37,10 +37,6 @@ namespace RAMSPDToolkit.I2CSMBus
             }
 
             _PCIAddress = pciAddress;
-
-            _PCICMDOriginal = DriverAccess.ReadPciConfigWord(_PCIAddress, SharedConstants.PCICMD);
-
-            LogSimple.LogTrace($"{nameof(SMBusI801)}: PCICMD is 0x{_PCICMDOriginal:X4} ({_PCICMDOriginal}).");
         }
 
         #endregion
@@ -51,11 +47,6 @@ namespace RAMSPDToolkit.I2CSMBus
         /// PCI address of the SMBus controller. Used for PCICMD modifications.
         /// </summary>
         readonly uint _PCIAddress = PCIConstants.PCI_DEVICE_INVALID;
-
-        /// <summary>
-        /// Initial value of the PCI Command Register (PCICMD) for this SMBus controller.
-        /// </summary>
-        readonly ushort _PCICMDOriginal;
 
         #endregion
 
@@ -98,7 +89,7 @@ namespace RAMSPDToolkit.I2CSMBus
                 using (var pci = new WorldMutexGuard(WorldMutexManager.WorldPCIMutex))
                 {
                     //Modify (if necessary) and restore PCICMD
-                    using (var io = new PCICMDIOGuard(_PCIAddress, _PCICMDOriginal))
+                    using (var io = new PCICMDIOGuard(_PCIAddress))
                     {
                         var result = i801Access(addr, read_write, command, size, data);
 

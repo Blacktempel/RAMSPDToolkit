@@ -21,13 +21,13 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.Shared
     {
         #region Constructor
 
-        public PCICMDIOGuard(uint pciAddress, ushort pciCMDOriginal)
+        public PCICMDIOGuard(uint pciAddress)
         {
             _PCIAddress = pciAddress;
-            _PCICMDOriginal = pciCMDOriginal;
+            _PCICMDOriginal = DriverAccess.ReadPciConfigWord(_PCIAddress, SharedConstants.PCICMD);
 
             //I/O is not enabled
-            if (!BitHandler.IsBitSet(pciCMDOriginal, SharedConstants.PCI_CMD_IO_BIT))
+            if (!BitHandler.IsBitSet(_PCICMDOriginal, SharedConstants.PCI_CMD_IO_BIT))
             {
                 //Enable I/O
                 _PCICMDModified = (ushort)(_PCICMDOriginal | SharedConstants.PCI_CMD_IO_BIT);
