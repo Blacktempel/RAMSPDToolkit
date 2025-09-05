@@ -26,6 +26,8 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.Shared
         public const int EPROTO     = 134; //Protocol error
         public const int ETIMEDOUT  = 138; //Connection timed out
 
+        public const int S_TIMEOUT = 2147024775;
+
         internal const int MAX_RETRIES = 450;
 
         /* PCI Address Constants */

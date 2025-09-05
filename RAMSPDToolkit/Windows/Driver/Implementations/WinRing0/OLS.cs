@@ -14,17 +14,16 @@
 
 using RAMSPDToolkit.Logging;
 using RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Enums;
+using RAMSPDToolkit.Windows.Driver.Interfaces;
 using RAMSPDToolkit.Windows.Interop;
 using RAMSPDToolkit.Windows.Utilities;
-using System.Diagnostics;
-using System.IO.Compression;
 
 namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
 {
     /// <summary>
     /// Driver access class. Extracts driver and handles driver interaction.
     /// </summary>
-    internal sealed class OLS : IDisposable, IDriver
+    internal sealed class OLS : IDisposable, IWinRing0Driver
     {
         #region Constructor
 
@@ -32,20 +31,20 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
         {
             if (!ExtractDriver())
             {
-                LogSimple.LogError($"{nameof(ExtractDriver)} failed - OLS Status {_Status}.");
+                LogSimple.LogError($"{nameof(OLS)} {nameof(ExtractDriver)} failed - OLS Status {_Status}.");
                 return;
             }
 
             if (!LoadLibraryFunctions())
             {
-                LogSimple.LogError($"{nameof(LoadLibraryFunctions)} failed - OLS Status {_Status}.");
+                LogSimple.LogError($"{nameof(OLS)} {nameof(LoadLibraryFunctions)} failed - OLS Status {_Status}.");
                 return;
             }
 
             if (InitializeOls() == 0)
             {
                 _Status = OLSStatus.DLL_INITIALIZE_ERROR;
-                LogSimple.LogError($"{nameof(InitializeOls)} failed - OLS Status {_Status} | DLL Status {GetDllStatus()}.");
+                LogSimple.LogError($"{nameof(OLS)} {nameof(InitializeOls)} failed - OLS Status {_Status} | DLL Status {GetDllStatus()}.");
             }
         }
 
@@ -277,7 +276,7 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
 
         #endregion
 
-        #region IDriver
+        #region IGenericDriver
 
         bool IDriver.Load()
         {
@@ -290,132 +289,132 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
             Dispose();
         }
 
-        byte IDriver.ReadIoPortByte(ushort port)
+        byte IGenericDriver.ReadIoPortByte(ushort port)
         {
             return ReadIoPortByte(port);
         }
 
-        ushort IDriver.ReadIoPortWord(ushort port)
+        ushort IGenericDriver.ReadIoPortWord(ushort port)
         {
             return ReadIoPortWord(port);
         }
 
-        uint IDriver.ReadIoPortDword(ushort port)
+        uint IGenericDriver.ReadIoPortDword(ushort port)
         {
             return ReadIoPortDword(port);
         }
 
-        bool IDriver.ReadIoPortByteEx(ushort port, ref byte value)
+        bool IGenericDriver.ReadIoPortByteEx(ushort port, ref byte value)
         {
             return ReadIoPortByteEx(port, ref value);
         }
 
-        bool IDriver.ReadIoPortWordEx(ushort port, ref ushort value)
+        bool IGenericDriver.ReadIoPortWordEx(ushort port, ref ushort value)
         {
             return ReadIoPortWordEx(port, ref value);
         }
 
-        bool IDriver.ReadIoPortDwordEx(ushort port, ref uint value)
+        bool IGenericDriver.ReadIoPortDwordEx(ushort port, ref uint value)
         {
             return ReadIoPortDwordEx(port, ref value);
         }
 
-        void IDriver.WriteIoPortByte(ushort port, byte value)
+        void IGenericDriver.WriteIoPortByte(ushort port, byte value)
         {
             WriteIoPortByte(port, value);
         }
 
-        void IDriver.WriteIoPortWord(ushort port, ushort value)
+        void IGenericDriver.WriteIoPortWord(ushort port, ushort value)
         {
             WriteIoPortWord(port, value);
         }
 
-        void IDriver.WriteIoPortDword(ushort port, uint value)
+        void IGenericDriver.WriteIoPortDword(ushort port, uint value)
         {
             WriteIoPortDword(port, value);
         }
 
-        bool IDriver.WriteIoPortByteEx(ushort port, byte value)
+        bool IGenericDriver.WriteIoPortByteEx(ushort port, byte value)
         {
             return WriteIoPortByteEx(port, value);
         }
 
-        bool IDriver.WriteIoPortWordEx(ushort port, ushort value)
+        bool IGenericDriver.WriteIoPortWordEx(ushort port, ushort value)
         {
             return WriteIoPortWordEx(port, value);
         }
 
-        bool IDriver.WriteIoPortDwordEx(ushort port, uint value)
+        bool IGenericDriver.WriteIoPortDwordEx(ushort port, uint value)
         {
             return WriteIoPortDwordEx(port, value);
         }
 
-        uint IDriver.FindPciDeviceById(ushort vendorId, ushort deviceId, byte index)
+        uint IGenericDriver.FindPciDeviceById(ushort vendorId, ushort deviceId, byte index)
         {
             return FindPciDeviceById(vendorId, deviceId, index);
         }
 
-        uint IDriver.FindPciDeviceByClass(byte baseClass, byte subClass, byte programIf, byte index)
+        uint IGenericDriver.FindPciDeviceByClass(byte baseClass, byte subClass, byte programIf, byte index)
         {
             return FindPciDeviceByClass(baseClass, subClass, programIf, index);
         }
 
-        byte IDriver.ReadPciConfigByte(uint pciAddress, byte regAddress)
+        byte IGenericDriver.ReadPciConfigByte(uint pciAddress, byte regAddress)
         {
             return ReadPciConfigByte(pciAddress, regAddress);
         }
 
-        ushort IDriver.ReadPciConfigWord(uint pciAddress, byte regAddress)
+        ushort IGenericDriver.ReadPciConfigWord(uint pciAddress, byte regAddress)
         {
             return ReadPciConfigWord(pciAddress, regAddress);
         }
 
-        uint IDriver.ReadPciConfigDword(uint pciAddress, byte regAddress)
+        uint IGenericDriver.ReadPciConfigDword(uint pciAddress, byte regAddress)
         {
             return ReadPciConfigDword(pciAddress, regAddress);
         }
 
-        bool IDriver.ReadPciConfigByteEx(uint pciAddress, uint regAddress, ref byte value)
+        bool IGenericDriver.ReadPciConfigByteEx(uint pciAddress, uint regAddress, ref byte value)
         {
             return ReadPciConfigByteEx(pciAddress, regAddress, ref value);
         }
 
-        bool IDriver.ReadPciConfigWordEx(uint pciAddress, uint regAddress, ref ushort value)
+        bool IGenericDriver.ReadPciConfigWordEx(uint pciAddress, uint regAddress, ref ushort value)
         {
             return ReadPciConfigWordEx(pciAddress, regAddress, ref value);
         }
 
-        bool IDriver.ReadPciConfigDwordEx(uint pciAddress, uint regAddress, ref uint value)
+        bool IGenericDriver.ReadPciConfigDwordEx(uint pciAddress, uint regAddress, ref uint value)
         {
             return ReadPciConfigDwordEx(pciAddress, regAddress, ref value);
         }
 
-        void IDriver.WritePciConfigByte(uint pciAddress, byte regAddress, byte value)
+        void IGenericDriver.WritePciConfigByte(uint pciAddress, byte regAddress, byte value)
         {
             WritePciConfigByte(pciAddress, regAddress, value);
         }
 
-        void IDriver.WritePciConfigWord(uint pciAddress, byte regAddress, ushort value)
+        void IGenericDriver.WritePciConfigWord(uint pciAddress, byte regAddress, ushort value)
         {
             WritePciConfigWord(pciAddress, regAddress, value);
         }
 
-        void IDriver.WritePciConfigDword(uint pciAddress, byte regAddress, uint value)
+        void IGenericDriver.WritePciConfigDword(uint pciAddress, byte regAddress, uint value)
         {
             WritePciConfigDword(pciAddress, regAddress, value);
         }
 
-        bool IDriver.WritePciConfigByteEx(uint pciAddress, uint regAddress, byte value)
+        bool IGenericDriver.WritePciConfigByteEx(uint pciAddress, uint regAddress, byte value)
         {
             return WritePciConfigByteEx(pciAddress, regAddress, value);
         }
 
-        bool IDriver.WritePciConfigWordEx(uint pciAddress, uint regAddress, ushort value)
+        bool IGenericDriver.WritePciConfigWordEx(uint pciAddress, uint regAddress, ushort value)
         {
             return WritePciConfigWordEx(pciAddress, regAddress, value);
         }
 
-        bool IDriver.WritePciConfigDwordEx(uint pciAddress, uint regAddress, uint value)
+        bool IGenericDriver.WritePciConfigDwordEx(uint pciAddress, uint regAddress, uint value)
         {
             return WritePciConfigDwordEx(pciAddress, regAddress, value);
         }
@@ -469,7 +468,8 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
             //Extract sys driver
             FilePathSYS = Path.ChangeExtension(driverFileName, ".sys");
 
-            if (!ExtractDriverResourceToFilePath(FilePathSYS, "WinRing0.sys.gz", "WinRing0x64.sys.gz"))
+            var resourceFileSYS = Environment.Is64BitOperatingSystem ? "WinRing0x64.sys.gz" : "WinRing0.sys.gz";
+            if (!ResourceFileExtractor.ExtractResourceFileToFilePath(FilePathSYS, resourceFileSYS))
             {
                 _Status = OLSStatus.DLL_RESOURCE_NOT_FOUND;
                 return false;
@@ -478,7 +478,8 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
             //Extract dll driver
             FilePathDLL = Path.ChangeExtension(driverFileName, ".dll");
 
-            if (!ExtractDriverResourceToFilePath(FilePathDLL, "WinRing0.dll.gz", "WinRing0x64.dll.gz"))
+            var resourceFileDLL = Environment.Is64BitOperatingSystem ? "WinRing0x64.dll.gz" : "WinRing0.dll.gz";
+            if (!ResourceFileExtractor.ExtractResourceFileToFilePath(FilePathDLL, resourceFileDLL))
             {
                 _Status = OLSStatus.DLL_RESOURCE_NOT_FOUND;
                 return false;
@@ -648,69 +649,6 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
                    && WritePhysicalMemory != null
 #endif
                    ;
-        }
-
-        static bool ExtractDriverResourceToFilePath(string filePath, string driver32bitArchive, string driver64bitArchive)
-        {
-            string resourceName = $"{nameof(RAMSPDToolkit)}.Resources.{(Environment.Is64BitOperatingSystem ? driver64bitArchive : driver32bitArchive)}";
-
-            var assemblyWithDriverResource = typeof(OLS).Assembly;
-
-            long requiredLength = 0;
-
-            try
-            {
-                using Stream stream = assemblyWithDriverResource.GetManifestResourceStream(resourceName);
-
-                //Resource is good
-                if (stream != null)
-                {
-                    using FileStream target = new(filePath, FileMode.Create);
-
-                    using var gzipStream = new GZipStream(stream, CompressionMode.Decompress);
-
-                    gzipStream.CopyTo(target);
-
-                    requiredLength = target.Length;
-                }
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-
-            if (ValidateUnzippedFile(filePath, requiredLength))
-            {
-                return true;
-            }
-
-            //Ensure the file is written to the file system - wait for it
-            var sw = new Stopwatch();
-            sw.Start();
-
-            while (sw.ElapsedMilliseconds < 2000)
-            {
-                if (ValidateUnzippedFile(filePath, requiredLength))
-                {
-                    return true;
-                }
-
-                Thread.Yield();
-            }
-
-            return false;
-        }
-
-        static bool ValidateUnzippedFile(string filePath, long requiredLength)
-        {
-            try
-            {
-                return File.Exists(filePath) && new FileInfo(filePath).Length == requiredLength;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
         }
 
         #endregion

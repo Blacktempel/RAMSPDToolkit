@@ -9,7 +9,10 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
+using RAMSPDToolkit.Extensions;
 using RAMSPDToolkit.Logging;
+using RAMSPDToolkit.Windows.Driver;
+using RAMSPDToolkit.Windows.Driver.Implementations;
 using OS = RAMSPDToolkit.Software.OperatingSystem;
 
 namespace RAMSPDToolkit.I2CSMBus
@@ -21,7 +24,7 @@ namespace RAMSPDToolkit.I2CSMBus
     {
         #region Fields
 
-        static List<SMBusInterface> _RegisteredSMBuses = new List<SMBusInterface>();
+        static List<SMBusInterface> _RegisteredSMBuses = new();
 
         #endregion
 
@@ -43,6 +46,26 @@ namespace RAMSPDToolkit.I2CSMBus
         #endregion
 
         #region Public
+
+        /// <summary>
+        /// Adds your own implementation of an instance of <see cref="SMBusInterface"/> to <see cref="RegisteredSMBuses"/>.
+        /// </summary>
+        /// <param name="smbus">SMBus instance to add.</param>
+        public static void AddSMBus(SMBusInterface smbus)
+        {
+            _RegisteredSMBuses.Add(smbus);
+        }
+
+        /// <summary>
+        /// Removes specified instance of <see cref="SMBusInterface"/> from <see cref="RegisteredSMBuses"/>.
+        /// </summary>
+        /// <param name="smbus">SMBus instance to remove.</param>
+        /// <returns>True if SMBus is successfully removed; otherwise false.<br/>
+        /// This method also returns false if SMBus was not found in <see cref="RegisteredSMBuses"/>.</returns>
+        public static bool RemoveSMBus(SMBusInterface smbus)
+        {
+            return _RegisteredSMBuses.Remove(smbus);
+        }
 
         /// <summary>
         /// Gets first SMBus in <see cref="RegisteredSMBuses"/> with specified type.
@@ -67,20 +90,29 @@ namespace RAMSPDToolkit.I2CSMBus
 
             if (OS.IsWindows())
             {
-                //smbusDetectMethods.Add(I2CSMBusAmdAdl.SMBusDetect);
-
-                if (UseWMI)
+                if (DriverManager.DriverImplementation == DriverImplementation.PawnIO)
                 {
-                    smbusDetectMethods.Add(SMBusI801 .SMBusDetect);
-                    smbusDetectMethods.Add(SMBusPiix4.SMBusDetect);
+                    smbusDetectMethods.Add(SMBusPawnIO.SMBusDetect);
                 }
                 else
                 {
-                    smbusDetectMethods.Add(WindowsSMBusDetector.DetectSMBuses);
-                }
+                    if (DriverManager.DriverImplementation.Any(DriverImplementation.WinRing0, DriverImplementation.Custom))
+                    {
+                        if (UseWMI)
+                        {
+                            smbusDetectMethods.Add(SMBusI801 .SMBusDetect);
+                            smbusDetectMethods.Add(SMBusPiix4.SMBusDetect);
+                        }
+                        else
+                        {
+                            smbusDetectMethods.Add(WindowsSMBusDetector.DetectSMBuses);
+                        }
 
-                //smbusDetectMethods.Add(SMBusNVAPI  .SMBusDetect);
-                smbusDetectMethods.Add(SMBusNCT6775.SMBusDetect);
+                        //smbusDetectMethods.Add(I2CSMBusAmdAdl.SMBusDetect);
+                        //smbusDetectMethods.Add(SMBusNVAPI    .SMBusDetect);
+                        smbusDetectMethods.Add(SMBusNCT6775.SMBusDetect);
+                    }
+                }
             }
             else if (OS.IsLinux())
             {
@@ -93,15 +125,6 @@ namespace RAMSPDToolkit.I2CSMBus
             {
                 detection?.Invoke();
             }
-        }
-
-        #endregion
-
-        #region Internal
-
-        internal static void AddSMBus(SMBusInterface smbus)
-        {
-            _RegisteredSMBuses.Add(smbus);
         }
 
         #endregion

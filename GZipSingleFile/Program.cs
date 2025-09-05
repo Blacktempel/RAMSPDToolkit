@@ -21,7 +21,7 @@ static class Program
 
         Console.WriteLine($"Zipping file '{file}'");
 
-        GZipper.CompressFile(file, file + ".gz");
+        GZipper.CompressFile(file, file + ".gz", false);
 
         DoExit();
     }

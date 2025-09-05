@@ -51,14 +51,10 @@ namespace ConsoleOutputTest
                 //Check for Windows OS and load driver
                 if (OperatingSystem.IsWindows())
                 {
-                    //Init OLS driver
-                    DriverManager.InitDriver(InternalDriver.OLS);
-
-                    //Check if OLS driver was initalized and could be loaded
-                    if (DriverManager.DriverImplementation == InternalDriver.OLS
-                     && DriverManager.Driver.Load())
+                    //Init driver
+                    if (DriverManager.LoadDriver(DriverImplementation.WinRing0))
                     {
-                        Log("***** Driver is open. *****");
+                        Log($"***** Driver {DriverManager.DriverImplementation} is open. *****");
                     }
                     else
                     {
@@ -136,7 +132,7 @@ namespace ConsoleOutputTest
                 if (OperatingSystem.IsWindows())
                 {
                     //Finished, must do cleanup
-                    DriverManager.Driver.Unload();
+                    DriverManager.UnloadDriver();
                     Log("***** Closed driver. *****");
                 }
             }

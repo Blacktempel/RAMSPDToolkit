@@ -79,7 +79,8 @@ namespace RAMSPDToolkit.SPD
 
                 //Try again specified number of times and give up
                 if (statusAbs == SharedConstants.EBUSY ||
-                    statusAbs == SharedConstants.ETIMEDOUT)
+                    statusAbs == SharedConstants.ETIMEDOUT ||
+                    statusAbs == SharedConstants.S_TIMEOUT)
                 {
                     int MAX_RETRIES = retries;
                     int retry = MAX_RETRIES;
@@ -115,7 +116,8 @@ namespace RAMSPDToolkit.SPD
 
                 //Try again specified number of times and give up
                 if (statusAbs == SharedConstants.EBUSY ||
-                    statusAbs == SharedConstants.ETIMEDOUT)
+                    statusAbs == SharedConstants.ETIMEDOUT ||
+                    statusAbs == SharedConstants.S_TIMEOUT)
                 {
                     int MAX_RETRIES = retries;
                     int retry = MAX_RETRIES;
@@ -151,7 +153,8 @@ namespace RAMSPDToolkit.SPD
 
                 //Try again specified number of times and give up
                 if (statusAbs == SharedConstants.EBUSY ||
-                    statusAbs == SharedConstants.ETIMEDOUT)
+                    statusAbs == SharedConstants.ETIMEDOUT ||
+                    statusAbs == SharedConstants.S_TIMEOUT)
                 {
                     int MAX_RETRIES = retries;
                     int retry = MAX_RETRIES;

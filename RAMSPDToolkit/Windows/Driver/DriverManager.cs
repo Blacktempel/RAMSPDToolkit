@@ -10,10 +10,12 @@
  */
 
 using RAMSPDToolkit.Logging;
+using RAMSPDToolkit.Windows.Driver.Implementations;
+using RAMSPDToolkit.Windows.Driver.Interfaces;
 
 #if !RELEASE_NDD
 
-using RAMSPDToolkit.Windows.Driver.Implementations;
+using RAMSPDToolkit.Windows.Driver.Implementations.PawnIO;
 using RAMSPDToolkit.Windows.Driver.Implementations.WinRing0;
 
 #endif
@@ -27,21 +29,17 @@ namespace RAMSPDToolkit.Windows.Driver
     {
         #region Properties
 
-#if !RELEASE_NDD
         /// <summary>
         /// Identifies current driver implementation.<br/>
-        /// This is only valid after a driver has been set to <see cref="Driver"/> or after <see cref="InitDriver"/> was called.
+        /// This is only valid after <see cref="LoadDriver"/> was called.
         /// </summary>
-        public static InternalDriver DriverImplementation { get; private set; }
-            = InternalDriver.Custom;
-#endif
+        public static DriverImplementation DriverImplementation { get; private set; }
+            = DriverImplementation.Custom;
 
         static IDriver _Driver;
         /// <summary>
         /// Current driver implementation instance.
         /// </summary>
-        /// <remarks>Once it has been set, it cannot be changed.
-        /// </remarks>
         public static IDriver Driver
         {
             get { return _Driver; }
@@ -60,25 +58,96 @@ namespace RAMSPDToolkit.Windows.Driver
 
         #region Public
 
-#if !RELEASE_NDD
+#if RELEASE_NDD
         /// <summary>
-        /// Initialize <see cref="Driver"/> with internal driver implementation.<br/>
-        /// Use this if you don't want to implement your own driver.
+        /// Loads specified <see cref="Driver"/>.
         /// </summary>
-        /// <param name="defaultDriver">Internal driver to use.</param>
-        public static void InitDriver(InternalDriver defaultDriver)
+        /// <returns>Returns boolean value whether loading driver was successful.</returns>
+        public static bool LoadDriver()
         {
-            switch (defaultDriver)
+#else
+        /// <summary>
+        /// Loads specified <see cref="Driver"/>.
+        /// </summary>
+        /// <param name="driverImplementation">If this parameter is null: it will determine implementation based on assigned instance to <see cref="Driver"/> and its used interface (<see cref="IWinRing0Driver"/>; <see cref="IPawnIODriver"/>; <see cref="IGenericDriver"/>).<br/>
+        /// If this parameter is NOT null: it will load an internal implementation based on which you have specified. <see cref="DriverImplementation.Custom"/> is invalid here.
+        /// </param>
+        /// <returns>Returns boolean value whether loading driver was successful.</returns>
+        public static bool LoadDriver(DriverImplementation? driverImplementation = null)
+        {
+            //Internal implementation
+            if (driverImplementation != null)
             {
-                case InternalDriver.OLS:
-                    Driver = new OLS();
-                    break;
-                case InternalDriver.Custom:
-                default:
-                    break;
+                switch (driverImplementation.Value)
+                {
+                    case DriverImplementation.WinRing0:
+                        Driver = new OLS();
+                        break;
+                    case DriverImplementation.PawnIO:
+                        Driver = new PawnIO();
+                        break;
+                    default:
+                        return false;
+                }
+
+                DriverImplementation = driverImplementation.Value;
+            }
+            else
+#endif
+            {
+                //External implementation
+                if (Driver is IWinRing0Driver)
+                {
+                    DriverImplementation = DriverImplementation.WinRing0;
+                }
+                else if (Driver is IPawnIODriver)
+                {
+                    DriverImplementation = DriverImplementation.PawnIO;
+                }
+                else if (Driver is IGenericDriver)
+                {
+                    DriverImplementation = DriverImplementation.Custom;
+                }
+                else
+                {
+                    return false;
+                }
             }
 
-            DriverImplementation = defaultDriver;
+            return Driver.Load();
+        }
+
+        /// <summary>
+        /// Unloads current instance of <see cref="Driver"/>.
+        /// </summary>
+        public static void UnloadDriver()
+        {
+            Driver?.Unload();
+            Driver = null;
+        }
+
+        #endregion
+
+        #region Private
+
+#if !RELEASE_NDD
+        static void Dummy()
+        {
+            //Used as static assert
+            Dummy_Check_WinRing0<OLS   >();
+            Dummy_Check_PawnIO  <PawnIO>();
+        }
+
+        static void Dummy_Check_WinRing0<TWinRing0>()
+            where TWinRing0 : IWinRing0Driver
+        {
+            //Empty
+        }
+
+        static void Dummy_Check_PawnIO<TPawnIO>()
+            where TPawnIO : IPawnIODriver
+        {
+            //Empty
         }
 #endif
 

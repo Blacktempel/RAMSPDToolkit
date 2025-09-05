@@ -50,17 +50,13 @@ static class Program
         Logger.Instance.IsEnabled = true;
         Logger.Instance.LogLevel = LogLevel.Trace;
 
-        //Check for Windows before loading driver
+        //Check for Windows OS and load driver
         if (OperatingSystem.IsWindows())
         {
-            //Init OLS driver
-            DriverManager.InitDriver(InternalDriver.OLS);
-
-            //Check if OLS driver was initalized and could be loaded
-            if (DriverManager.DriverImplementation == InternalDriver.OLS
-             && DriverManager.Driver.Load())
+            //Load driver
+            if (DriverManager.LoadDriver(DriverImplementation.WinRing0))
             {
-                Console.WriteLine("***** Driver is open. *****");
+                Console.WriteLine($"***** Driver {DriverManager.DriverImplementation} is open. *****");
             }
             else
             {
@@ -121,9 +117,10 @@ Some functionality requires administrator privileges to access the data.<br/>
 Consider adding a manifest file to your application and set ``requestedExecutionLevel`` to ``requireAdministrator``.
 
 ### Can I use my own driver ?
-Yes, you can implement your own driver via our IDriver interface.<br/>
-You just have to assign an instance to RAMSPDToolkit and it will use your implementation instead.<br/>
-Please be sure to use a well tested driver.
+Yes, you can implement your own driver. This can be done using our IGenericDriver interface.<br/>
+If you will be using any of our pre-defined drivers you will find specific interfaces for them aswell, which you can implement.<br/>
+Whatever you do, please be sure to use a well tested driver.<br/>
+New driver suggestions are welcome. Please open an issue on the repository and we will check.
 
 ### NDD Build / Package (No Default Driver[s])
 We also provide a version without any internal driver implementation or binaries.

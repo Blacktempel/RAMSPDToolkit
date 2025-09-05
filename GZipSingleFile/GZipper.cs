@@ -4,7 +4,7 @@ namespace GZipSingleFile
 {
     internal class GZipper
     {
-        public static void CompressFile(string source, string destination)
+        public static void CompressFile(string source, string destination, bool trashByte)
         {
             using FileStream sourceFile = new(source, FileMode.Open);
             using FileStream targetFile = new(destination, FileMode.OpenOrCreate);
@@ -13,6 +13,11 @@ namespace GZipSingleFile
 
             var buffer = new byte[1024];
             int read;
+
+            if (trashByte)
+            {
+                gzipStream.Write([7]);
+            }
 
             while ((read = sourceFile.Read(buffer, 0, buffer.Length)) > 0)
             {

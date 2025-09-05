@@ -9,19 +9,13 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
-namespace RAMSPDToolkit.Windows.Driver
+namespace RAMSPDToolkit.Windows.Driver.Interfaces
 {
     /// <summary>
-    /// Driver interface for driver implementation.
+    /// Generic driver interface for driver implementation.
     /// </summary>
-    public interface IDriver
+    public interface IGenericDriver : IDriver
     {
-        bool IsOpen { get; }
-
-        bool Load();
-
-        void Unload();
-
         byte   ReadIoPortByte (ushort port);
         ushort ReadIoPortWord (ushort port);
         uint   ReadIoPortDword(ushort port);

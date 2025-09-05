@@ -9,10 +9,12 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
+using RAMSPDToolkit.Windows.Driver.Interfaces;
+
 namespace RAMSPDToolkit.Windows.Driver
 {
     /// <summary>
-    /// Forward to driver. Wrapper class to abstract calls into driver.
+    /// Forward to <see cref="IGenericDriver"/>. Wrapper class to abstract calls into driver.
     /// </summary>
     internal static class DriverAccess
     {
@@ -41,37 +43,46 @@ namespace RAMSPDToolkit.Windows.Driver
 
         public static void WriteIoPortByte(ushort port, byte value)
         {
-            DriverManager.Driver.WriteIoPortByte(port, value);
+            GetDriver().WriteIoPortByte(port, value);
         }
 
         public static byte ReadIoPortByte(ushort port)
         {
-            return DriverManager.Driver.ReadIoPortByte(port);
+            return GetDriver().ReadIoPortByte(port);
         }
 
         public static uint FindPciDeviceById(ushort vendorId, ushort deviceId, byte index)
         {
-            return DriverManager.Driver.FindPciDeviceById(vendorId, deviceId, index);
+            return GetDriver().FindPciDeviceById(vendorId, deviceId, index);
         }
 
         public static byte ReadPciConfigByte(uint pciAddress, byte regAddress)
         {
-            return DriverManager.Driver.ReadPciConfigByte(pciAddress, regAddress);
+            return GetDriver().ReadPciConfigByte(pciAddress, regAddress);
         }
 
         public static ushort ReadPciConfigWord(uint pciAddress, byte regAddress)
         {
-            return DriverManager.Driver.ReadPciConfigWord(pciAddress, regAddress);
+            return GetDriver().ReadPciConfigWord(pciAddress, regAddress);
         }
 
         public static bool ReadPciConfigDwordEx(uint pciAddress, uint regAddress, ref uint value)
         {
-            return DriverManager.Driver.ReadPciConfigDwordEx(pciAddress, regAddress, ref value);
+            return GetDriver().ReadPciConfigDwordEx(pciAddress, regAddress, ref value);
         }
 
         public static void WritePciConfigWord(uint pciAddress, byte regAddress, ushort value)
         {
-            DriverManager.Driver.WritePciConfigWord(pciAddress, regAddress, value);
+            GetDriver().WritePciConfigWord(pciAddress, regAddress, value);
+        }
+
+        #endregion
+
+        #region Private
+
+        static IGenericDriver GetDriver()
+        {
+            return DriverManager.Driver as IGenericDriver;
         }
 
         #endregion
