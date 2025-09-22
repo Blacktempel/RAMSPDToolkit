@@ -63,6 +63,40 @@ namespace RAMSPDToolkit.SPD
             return (SPDMemoryType)At(DDR4Constants.SPD_DDR4_MODULE_MEMORY_TYPE);
         }
 
+        public override float GetCapacity()
+        {
+            var densityAndBanks      = At(DDR4Constants.SPD_DDR4_MODULE_DENSITY_BANKS         );
+            var primaryPackageType   = At(DDR4Constants.SPD_DDR4_MODULE_PRIMARY_PACKAGE_TYPE  );
+            var secondaryPackageType = At(DDR4Constants.SPD_DDR4_MODULE_SECONDARY_PACKAGE_TYPE);
+            var organization         = At(DDR4Constants.SPD_DDR4_MODULE_ORGANIZATION          );
+
+            var capacityPerDie = BitHandler.GetBits(densityAndBanks, 0, 3);
+
+            var primaryDies   = BitHandler.GetBits(primaryPackageType  , 4, 6);
+            var secondaryDies = BitHandler.GetBits(secondaryPackageType, 4, 6);
+
+            var rankMix      = BitHandler.GetBits(organization, 6, 6);
+            var packageRanks = BitHandler.GetBits(organization, 3, 5);
+
+            if (rankMix == DDR4Constants.SPD_DDR4_RANKMIX_SYMMETRICAL)
+            {
+                return GetDies(primaryDies)
+                     * GetCapacityPerDie(capacityPerDie)
+                     * GetRanks(packageRanks);
+            }
+            else if (rankMix == DDR4Constants.SPD_DDR4_RANKMIX_ASYMMETRICAL)
+            {
+                return
+                (
+                    GetDies(primaryDies  ) * GetCapacityPerDie(capacityPerDie)
+                  + GetDies(secondaryDies) * GetCapacityPerDie(capacityPerDie)
+                )
+                * GetRanks(packageRanks);
+            }
+
+            throw new Exception($"{nameof(DDR4Constants.SPD_DDR4_MODULE_ORGANIZATION)} {nameof(rankMix)} is invalid.");
+        }
+
         public override byte ModuleManufacturerContinuationCode()
         {
             return BitHandler.UnsetBit(At(DDR4Constants.SPD_DDR4_MODULE_MANUFACTURER_CONTINUATION_CODE), DDR4Constants.SPD_DDR4_MANUFACTURER_CONTINUATION_CODE_ODD_PARITY_BIT);
@@ -214,6 +248,167 @@ namespace RAMSPDToolkit.SPD
         #region IThermalSensor
 
         public abstract bool UpdateTemperature();
+
+        #endregion
+
+        #region Private
+
+        int GetDies(int rawValue)
+        {
+            int dies = 1;
+
+            switch (rawValue)
+            {
+                case 0b000:
+                    dies = 1;
+                    break;
+                case 0b001:
+                    dies = 2;
+                    break;
+                case 0b010:
+                    dies = 3;
+                    break;
+                case 0b011:
+                    dies = 4;
+                    break;
+                case 0b100:
+                    dies = 5;
+                    break;
+                case 0b101:
+                    dies = 6;
+                    break;
+                case 0b110:
+                    dies = 7;
+                    break;
+                case 0b111:
+                    dies = 8;
+                    break;
+            }
+
+            return dies;
+        }
+
+        float GetCapacityPerDie(int rawValue)
+        {
+            float gb = 0;
+
+            switch (rawValue)
+            {
+                case 0b0000:
+                    gb = 0.256f;
+                    break;
+                case 0b0001:
+                    gb = 0.512f;
+                    break;
+                case 0b0010:
+                    gb = 1;
+                    break;
+                case 0b0011:
+                    gb = 2;
+                    break;
+                case 0b0100:
+                    gb = 4;
+                    break;
+                case 0b0101:
+                    gb = 8;
+                    break;
+                case 0b0110:
+                    gb = 16;
+                    break;
+                case 0b0111:
+                    gb = 32;
+                    break;
+                case 0b1000:
+                    gb = 12;
+                    break;
+                case 0b1001:
+                    gb = 24;
+                    break;
+            }
+
+            return gb;
+        }
+
+        int GetRanks(int rawValue)
+        {
+            byte ranks = 0;
+
+            switch (rawValue)
+            {
+                case 0b000:
+                    ranks = 1;
+                    break;
+                case 0b001:
+                    ranks = 2;
+                    break;
+                case 0b010:
+                    ranks = 3;
+                    break;
+                case 0b011:
+                    ranks = 4;
+                    break;
+                case 0b100:
+                    ranks = 5;
+                    break;
+                case 0b101:
+                    ranks = 6;
+                    break;
+                case 0b110:
+                    ranks = 7;
+                    break;
+                case 0b111:
+                    ranks = 8;
+                    break;
+            }
+
+            return ranks;
+        }
+
+        int GetBusWidth(int rawValue)
+        {
+            byte width = 0;
+
+            switch (rawValue)
+            {
+                case 0b000:
+                    width = 8;
+                    break;
+                case 0b001:
+                    width = 16;
+                    break;
+                case 0b010:
+                    width = 32;
+                    break;
+                case 0b011:
+                    width = 64;
+                    break;
+            }
+
+            return width;
+        }
+
+        int GetDeviceWidth(int rawValue)
+        {
+            byte width = 0;
+
+            switch (rawValue)
+            {
+                case 0b000:
+                    width = 4;
+                    break;
+                case 0b001:
+                    width = 8;
+                    break;
+                case 0b010:
+                    width = 16;
+                    break;
+                case 0b011:
+                    width = 32;
+                    break;
+            }
+
+            return width;
+        }
 
         #endregion
     }

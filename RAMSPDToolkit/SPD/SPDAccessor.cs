@@ -197,6 +197,12 @@ namespace RAMSPDToolkit.SPD
         public abstract SPDMemoryType MemoryType();
 
         /// <summary>
+        /// Gets capacity of module in gigabytes.
+        /// </summary>
+        /// <returns>Capacity of module in gigabytes.</returns>
+        public abstract float GetCapacity();
+
+        /// <summary>
         /// Get module manufacturer continuation code.
         /// </summary>
         /// <returns>Read module manufacturer continuation code.</returns>

@@ -76,6 +76,15 @@ namespace RAMSPDToolkit.Windows.Driver
             GetDriver().WritePciConfigWord(pciAddress, regAddress, value);
         }
 
+#if _PHYSICAL_MEMORY_SUPPORT
+
+        public static unsafe uint ReadPhysicalMemory(UIntPtr address, byte* buffer, uint count, uint unitSize)
+        {
+            return GetDriver().ReadPhysicalMemory(address, buffer, count, unitSize);
+        }
+
+#endif
+
         #endregion
 
         #region Private

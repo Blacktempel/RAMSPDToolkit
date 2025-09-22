@@ -41,8 +41,15 @@ namespace RAMSPDToolkit.SPD.Interop
         public const byte SPD_DDR5_TEMPERATURE_ADDRESS                              = 0x31;
         public const byte SPD_DDR5_THERMAL_SENSOR_STATUS                            = 0x33;
 
-        public const ushort SPD_DDR5_MODULE_SPD_REVISION = 0x01;
-        public const ushort SPD_DDR5_MODULE_MEMORY_TYPE  = 0x02;
+        public const ushort SPD_DDR5_MODULE_SPD_REVISION           = 0x001;
+        public const ushort SPD_DDR5_MODULE_MEMORY_TYPE            = 0x002;
+        public const ushort SPD_DDR5_MODULE_FIRST_DENSITY_PACKAGE  = 0x004;
+        public const ushort SPD_DDR5_MODULE_SECOND_DENSITY_PACKAGE = 0x008;
+        public const ushort SPD_DDR5_MODULE_DIMM_ATTRIBUTES        = 0x0E9;
+        public const ushort SPD_DDR5_MODULE_ORGANIZATION           = 0x0EA;
+
+        public const byte SPD_DDR5_RANKMIX_SYMMETRICAL  = 0;
+        public const byte SPD_DDR5_RANKMIX_ASYMMETRICAL = 1;
 
         public const ushort SPD_DDR5_MODULE_MANUFACTURER_CONTINUATION_CODE   = 0x200;
         public const ushort SPD_DDR5_MODULE_MANUFACTURER_ID_CODE             = 0x201;

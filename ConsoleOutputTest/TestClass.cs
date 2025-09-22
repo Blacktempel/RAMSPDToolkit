@@ -196,7 +196,8 @@ namespace ConsoleOutputTest
 
             Log($"Page Data                            : {spd.PageData}");
             Log($"SPD Revision                         : 0x{spd.SPDRevision():X2}");
-            Log($"Memory Type                          : {spd.MemoryType()}"  );
+            Log($"Memory Type                          : {spd.MemoryType()}");
+            Log($"Capacity (GB)                        : {spd.GetCapacity()}");
 
             if (OS.IsWindows() || (OS.IsLinux() && !bus.HasSPDWriteProtection))
             {

@@ -419,6 +419,15 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
             return WritePciConfigDwordEx(pciAddress, regAddress, value);
         }
 
+#if _PHYSICAL_MEMORY_SUPPORT
+
+        unsafe uint IGenericDriver.ReadPhysicalMemory(UIntPtr address, byte* buffer, uint count, uint unitSize)
+        {
+            return ReadPhysicalMemory(address, buffer, count, unitSize);
+        }
+
+#endif
+
         #endregion
 
         #region Public

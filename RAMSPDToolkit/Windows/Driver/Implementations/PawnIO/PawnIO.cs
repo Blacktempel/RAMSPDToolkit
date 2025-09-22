@@ -27,16 +27,13 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.PawnIO
 
         public PawnIO()
         {
-            _PawnIOLib = new PawnIOLib();
         }
 
         #endregion
 
         #region Fields
 
-        IntPtr _Handle;
-
-        PawnIOLib _PawnIOLib;
+        static PawnIOLib _PawnIOLib;
 
         #endregion
 
@@ -50,14 +47,43 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.PawnIO
 
         public bool Load()
         {
-            /*var status = */_PawnIOLib.PawnIOOpen(out _Handle);
+            if (_PawnIOLib == null)
+            {
+                _PawnIOLib = new PawnIOLib();
+            }
 
-            //_PawnIOLib.PawnIOVersion(out var version);
-
-            return _Handle != IntPtr.Zero;
+            return _PawnIOLib != null
+                && _PawnIOLib.IsModuleLoaded;
         }
 
-        public unsafe bool LoadModule(PawnIOSMBusIdentifier pawnIOSMBusIdentifier)
+        public IPawnIOModule LoadModule(PawnIOSMBusIdentifier pawnIOSMBusIdentifier)
+        {
+            var module = new PawnIOModule();
+
+            if (module.Open()
+             && module.IsOpen
+             && LoadModuleFromResource(module, pawnIOSMBusIdentifier))
+            {
+                return module;
+            }
+
+            return null;
+        }
+
+        public void Unload()
+        {
+            if (_PawnIOLib != null)
+            {
+                _PawnIOLib.Dispose();
+                _PawnIOLib = null;
+            }
+        }
+
+        #endregion
+
+        #region Private
+
+        unsafe bool LoadModuleFromResource(PawnIOModule module, PawnIOSMBusIdentifier pawnIOSMBusIdentifier)
         {
             string moduleResourceFilename = null;
 
@@ -102,26 +128,10 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.PawnIO
             {
                 fixed (byte* moduleData = bytes)
                 {
-                    var returnValue = _PawnIOLib.PawnIOLoad(_Handle, moduleData, (uint)bytes.Length);
+                    var returnValue = _PawnIOLib.PawnIOLoad(module._Handle, moduleData, (uint)bytes.Length);
 
                     return returnValue == 0;
                 }
-            }
-        }
-
-        public int Execute(string name, long[] inBuffer, uint inSize, long[] outBuffer, uint outSize, out uint returnSize)
-        {
-            return _PawnIOLib.PawnIOExecute(_Handle, name, inBuffer, inSize, outBuffer, outSize, out returnSize);
-        }
-
-        public void Unload()
-        {
-            if (_PawnIOLib != null)
-            {
-                _PawnIOLib.PawnIOClose(_Handle);
-
-                _PawnIOLib.Dispose();
-                _PawnIOLib = null;
             }
         }
 

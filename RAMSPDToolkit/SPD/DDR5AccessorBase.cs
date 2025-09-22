@@ -73,6 +73,45 @@ namespace RAMSPDToolkit.SPD
             return (SPDMemoryType)At(DDR5Constants.SPD_DDR5_MODULE_MEMORY_TYPE);
         }
 
+        public override float GetCapacity()
+        {
+            var firstDensityAndPackage  = At(DDR5Constants.SPD_DDR5_MODULE_FIRST_DENSITY_PACKAGE );
+            var secondDensityAndPackage = At(DDR5Constants.SPD_DDR5_MODULE_SECOND_DENSITY_PACKAGE);
+            var dimmAttributes          = At(DDR5Constants.SPD_DDR5_MODULE_DIMM_ATTRIBUTES       );
+            var organization            = At(DDR5Constants.SPD_DDR5_MODULE_ORGANIZATION          );
+
+            var firstDensityPerDie  = BitHandler.GetBits(firstDensityAndPackage , 0, 4);
+            var firstDiePerPackage  = BitHandler.GetBits(firstDensityAndPackage , 5, 7);
+            var secondDensityPerDie = BitHandler.GetBits(secondDensityAndPackage, 0, 4);
+            var secondDiePerPackage = BitHandler.GetBits(secondDensityAndPackage, 5, 7);
+
+            var rowsOfDRAMs               = BitHandler.ExtractBits(dimmAttributes, 0, 1, 3);
+            var operatingTemperatureRange = BitHandler.GetBits    (dimmAttributes, 4, 7);
+
+            var rankMix      = BitHandler.GetBits(organization, 6, 6);
+            var packageRanks = BitHandler.GetBits(organization, 3, 5);
+
+            if (rankMix == DDR5Constants.SPD_DDR5_RANKMIX_SYMMETRICAL)
+            {
+                return GetDies(firstDiePerPackage)
+                     * GetDensityPerDie(firstDensityPerDie)
+                     * GetRows(rowsOfDRAMs)
+                     * GetRanks(packageRanks);
+            }
+            else if (rankMix == DDR5Constants.SPD_DDR5_RANKMIX_ASYMMETRICAL)
+            {
+                return
+                (
+                    GetDies(firstDiePerPackage ) * GetDensityPerDie(firstDensityPerDie )
+                  + GetDies(secondDiePerPackage) * GetDensityPerDie(secondDensityPerDie)
+                )
+                * GetRows(rowsOfDRAMs)
+                * GetRanks(packageRanks);
+            }
+
+            throw new Exception($"{nameof(DDR5Constants.SPD_DDR5_MODULE_ORGANIZATION)} {nameof(rankMix)} is invalid.");
+        }
+
         public override byte ModuleManufacturerContinuationCode()
         {
             return BitHandler.UnsetBit(At(DDR5Constants.SPD_DDR5_MODULE_MANUFACTURER_CONTINUATION_CODE), DDR5Constants.SPD_DDR5_MANUFACTURER_CONTINUATION_CODE_ODD_PARITY_BIT);
@@ -317,6 +356,126 @@ namespace RAMSPDToolkit.SPD
 
                 LogSimple.LogTrace($"{nameof(WriteRecoveryTime)} = {WriteRecoveryTime} ms (Raw = {byteTemp}).");
             }
+        }
+
+        int GetDies(int rawValue)
+        {
+            int dies = 1;
+
+            switch (rawValue)
+            {
+                case 0b000:
+                    dies = 1;
+                    break;
+                case 0b001:
+                case 0b010:
+                    dies = 2;
+                    break;
+                case 0b011:
+                    dies = 4;
+                    break;
+                case 0b100:
+                    dies = 8;
+                    break;
+                case 0b101:
+                    dies = 16;
+                    break;
+            }
+
+            return dies;
+        }
+
+        float GetDensityPerDie(int rawValue)
+        {
+            float gb = 0;
+
+            switch (rawValue)
+            {
+                case 0b00001:
+                    gb = 4;
+                    break;
+                case 0b00010:
+                    gb = 8;
+                    break;
+                case 0b00011:
+                    gb = 12;
+                    break;
+                case 0b00100:
+                    gb = 16;
+                    break;
+                case 0b00101:
+                    gb = 24;
+                    break;
+                case 0b00110:
+                    gb = 32;
+                    break;
+                case 0b00111:
+                    gb = 48;
+                    break;
+                case 0b01000:
+                    gb = 64;
+                    break;
+            }
+
+            return gb;
+        }
+
+        int GetRanks(int rawValue)
+        {
+            byte ranks = 0;
+
+            switch (rawValue)
+            {
+                case 0b000:
+                    ranks = 1;
+                    break;
+                case 0b001:
+                    ranks = 2;
+                    break;
+                case 0b010:
+                    ranks = 3;
+                    break;
+                case 0b011:
+                    ranks = 4;
+                    break;
+                case 0b100:
+                    ranks = 5;
+                    break;
+                case 0b101:
+                    ranks = 6;
+                    break;
+                case 0b110:
+                    ranks = 7;
+                    break;
+                case 0b111:
+                    ranks = 8;
+                    break;
+            }
+
+            return ranks;
+        }
+
+        int GetRows(int rawValue)
+        {
+            byte rows = 1;
+
+            switch (rawValue)
+            {
+                case 0b001:
+                    rows = 1;
+                    break;
+                case 0b010:
+                    rows = 2;
+                    break;
+                case 0b011:
+                    rows = 4;
+                    break;
+                case 0b100:
+                    rows = 3;
+                    break;
+            }
+
+            return rows;
         }
 
         #endregion

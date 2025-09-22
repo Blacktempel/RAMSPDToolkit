@@ -30,16 +30,15 @@ namespace RAMSPDToolkit.I2CSMBus
     {
         #region Constructor
 
-        SMBusPawnIO(PawnIOSMBusIdentifier pawnIOSMBusIdentifier)
+        SMBusPawnIO(IPawnIOModule pawnIO, PawnIOSMBusIdentifier pawnIOSMBusIdentifier)
         {
             if (!OS.IsWindows())
             {
                 throw new PlatformNotSupportedException();
             }
 
+            PawnIO = pawnIO;
             PawnIOSMBusIdentifier = pawnIOSMBusIdentifier;
-
-            var pawnIO = TryGetPawnIO();
 
             if (pawnIO != null)
             {
@@ -51,6 +50,8 @@ namespace RAMSPDToolkit.I2CSMBus
         #endregion
 
         #region Properties
+
+        IPawnIOModule PawnIO { get; }
 
         /// <summary>
         /// Identifies SMBus type.
@@ -97,18 +98,16 @@ namespace RAMSPDToolkit.I2CSMBus
 
             var outBuffer = new long[outSize];
 
-            var pawnIO = TryGetPawnIO();
-
-            if (pawnIO == null)
+            if (PawnIO == null)
             {
-                throw new NullReferenceException($"{nameof(IPawnIODriver)} was not initialized.");
+                throw new NullReferenceException($"{nameof(PawnIO)} was not initialized.");
             }
 
             int status;
 
             using (var guard = new WorldMutexGuard(WorldMutexManager.WorldSMBusMutex))
             {
-                status = pawnIO.Execute("ioctl_smbus_xfer", inBuffer, inSize, outBuffer, outSize, out var retSize);
+                status = PawnIO.Execute("ioctl_smbus_xfer", inBuffer, inSize, outBuffer, outSize, out var retSize);
             }
 
             if (data != null)
@@ -135,13 +134,13 @@ namespace RAMSPDToolkit.I2CSMBus
         /// <returns>True if SMBus is available and false if not.</returns>
         public static bool SMBusDetect()
         {
-            var pawnIO = TryGetPawnIO();
+            var pawnIO = DriverManager.Driver as IPawnIODriver;
 
             if (pawnIO?.IsOpen == false)
             {
                 return false;
             }
-            
+
             //Lock SMBus mutex
             using (var smbm = new WorldMutexGuard(WorldMutexManager.WorldSMBusMutex))
             {
@@ -149,26 +148,39 @@ namespace RAMSPDToolkit.I2CSMBus
                 using (var pci = new WorldMutexGuard(WorldMutexManager.WorldPCIMutex))
                 {
                     //I801
-                    if (pawnIO.LoadModule(PawnIOSMBusIdentifier.I801))
+                    var i801 = pawnIO.LoadModule(PawnIOSMBusIdentifier.I801);
+                    if (i801 != null)
                     {
-                        SMBusManager.AddSMBus(new SMBusPawnIO(PawnIOSMBusIdentifier.I801));
+                        SMBusManager.AddSMBus(new SMBusPawnIO(i801, PawnIOSMBusIdentifier.I801));
                         return true;
                     }
 
                     //Piix4
-                    if (pawnIO.LoadModule(PawnIOSMBusIdentifier.Piix4))
+                    var piix4 = pawnIO.LoadModule(PawnIOSMBusIdentifier.Piix4);
+                    if (piix4 != null)
                     {
-                        if (Piix4PortSelect(pawnIO, 0))
+                        if (Piix4PortSelect(piix4, 0))
                         {
-                            SMBusManager.AddSMBus(new SMBusPawnIO(PawnIOSMBusIdentifier.Piix4));
-                            return true;
+                            SMBusManager.AddSMBus(new SMBusPawnIO(piix4, PawnIOSMBusIdentifier.Piix4));
                         }
+
+                        piix4 = pawnIO.LoadModule(PawnIOSMBusIdentifier.Piix4);
+                        if (piix4 != null)
+                        {
+                            if (Piix4PortSelect(piix4, 1))
+                            {
+                                SMBusManager.AddSMBus(new SMBusPawnIO(piix4, PawnIOSMBusIdentifier.Piix4));
+                            }
+                        }
+
+                        return true;
                     }
 
                     //NCT6793
-                    if (pawnIO.LoadModule(PawnIOSMBusIdentifier.NCT6793))
+                    var nct6793 = pawnIO.LoadModule(PawnIOSMBusIdentifier.NCT6793);
+                    if (nct6793 != null)
                     {
-                        SMBusManager.AddSMBus(new SMBusPawnIO(PawnIOSMBusIdentifier.NCT6793));
+                        SMBusManager.AddSMBus(new SMBusPawnIO(nct6793, PawnIOSMBusIdentifier.NCT6793));
                         return true;
                     }
                 }
@@ -181,12 +193,7 @@ namespace RAMSPDToolkit.I2CSMBus
 
         #region Private
 
-        static IPawnIODriver TryGetPawnIO()
-        {
-            return DriverManager.Driver as IPawnIODriver;
-        }
-
-        static bool Piix4PortSelect(IPawnIODriver pawnIO, int port)
+        static bool Piix4PortSelect(IPawnIOModule pawnIO, int port)
         {
             uint inSize = 1;
             uint outSize = 1;
@@ -199,7 +206,7 @@ namespace RAMSPDToolkit.I2CSMBus
             return pawnIO.Execute("ioctl_piix4_port_sel", inBuffer, inSize, outBuffer, outSize, out var returnSize) == 0;
         }
 
-        void GetIdentity(IPawnIODriver pawnIO)
+        void GetIdentity(IPawnIOModule pawnIO)
         {
             if (pawnIO != null)
             {
@@ -234,7 +241,7 @@ namespace RAMSPDToolkit.I2CSMBus
             }
         }
 
-        void CheckWriteProtection(IPawnIODriver pawnIO)
+        void CheckWriteProtection(IPawnIOModule pawnIO)
         {
             if (pawnIO != null && PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.I801)
             {

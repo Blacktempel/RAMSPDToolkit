@@ -50,5 +50,11 @@ namespace RAMSPDToolkit.Windows.Driver.Interfaces
         bool WritePciConfigByteEx (uint pciAddress, uint regAddress, byte   value);
         bool WritePciConfigWordEx (uint pciAddress, uint regAddress, ushort value);
         bool WritePciConfigDwordEx(uint pciAddress, uint regAddress, uint   value);
+
+#if _PHYSICAL_MEMORY_SUPPORT
+
+        unsafe uint ReadPhysicalMemory(UIntPtr address, byte* buffer, uint count, uint unitSize);
+
+#endif
     }
 }

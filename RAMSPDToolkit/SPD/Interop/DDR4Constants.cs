@@ -33,8 +33,16 @@ namespace RAMSPDToolkit.SPD.Interop
         public const byte SPD_DDR4_THERMAL_SENSOR_MANUFACTURER           = 0x06;
         public const byte SPD_DDR4_THERMAL_SENSOR_DEVICEID               = 0x07;
 
-        public const ushort SPD_DDR4_MODULE_SPD_REVISION = 0x01;
-        public const ushort SPD_DDR4_MODULE_MEMORY_TYPE  = 0x02;
+        public const ushort SPD_DDR4_MODULE_SPD_REVISION           = 0x001;
+        public const ushort SPD_DDR4_MODULE_MEMORY_TYPE            = 0x002;
+        public const ushort SPD_DDR4_MODULE_DENSITY_BANKS          = 0x004;
+        public const ushort SPD_DDR4_MODULE_PRIMARY_PACKAGE_TYPE   = 0x006;
+        public const ushort SPD_DDR4_MODULE_SECONDARY_PACKAGE_TYPE = 0x00A;
+        public const ushort SPD_DDR4_MODULE_ORGANIZATION           = 0x00C;
+        public const ushort SPD_DDR4_MODULE_BUS_WIDTH              = 0x00D;
+
+        public const byte SPD_DDR4_RANKMIX_SYMMETRICAL  = 0;
+        public const byte SPD_DDR4_RANKMIX_ASYMMETRICAL = 1;
 
         public const ushort SPD_DDR4_MODULE_MANUFACTURER_CONTINUATION_CODE   = 0x140;
         public const ushort SPD_DDR4_MODULE_MANUFACTURER_ID_CODE             = 0x141;

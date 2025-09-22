@@ -79,12 +79,16 @@ namespace RAMSPDToolkit.Utilities
             where T : System.Numerics.IBinaryInteger<T>
         {
             if (fromBit < 0 || toBit < fromBit)
+            {
                 throw new ArgumentOutOfRangeException();
+            }
 
             int bitSize = int.CreateChecked(T.PopCount(~T.Zero));
 
             if (toBit >= bitSize)
+            {
                 throw new ArgumentOutOfRangeException();
+            }
 
             int length = toBit - fromBit + 1;
             T mask = (T.One << length) - T.One;
@@ -92,24 +96,88 @@ namespace RAMSPDToolkit.Utilities
             return (value >> fromBit) & mask;
         }
 #else
-        public static T GetBits<T>(T value, int fromBit, int toBit)
+        public static unsafe T GetBits<T>(T value, int fromBit, int toBit)
             where T : struct
         {
             if (fromBit < 0 || toBit < fromBit)
-                throw new ArgumentOutOfRangeException(nameof(fromBit));
+            {
+                throw new ArgumentOutOfRangeException();
+            }
 
-            ulong val = Convert.ToUInt64(value);
-            int bitSize = sizeof(ulong) * 8;
+            int bitSize = sizeof(T) * 8;
 
             if (toBit >= bitSize)
-                throw new ArgumentOutOfRangeException(nameof(toBit));
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+
+            ulong raw = 0;
+
+            byte* src = (byte*)&value;
+            byte* dst = (byte*)&raw;
+
+            for (int i = 0; i < sizeof(T); ++i)
+            {
+                dst[i] = src[i];
+            }
 
             int length = toBit - fromBit + 1;
-            ulong mask = ((1UL << length) - 1UL);
+            ulong mask = (1UL << length) - 1UL;
 
-            ulong result = (val >> fromBit) & mask;
-            return (T)Convert.ChangeType(result, typeof(T));
+            ulong result = (raw >> fromBit) & mask;
+
+            T ret = default;
+            byte* rsrc = (byte*)&result;
+            byte* rdst = (byte*)&ret;
+
+            for (int i = 0; i < sizeof(T); ++i)
+            {
+                rdst[i] = rsrc[i];
+            }
+
+            return ret;
         }
 #endif
+
+        public static unsafe T ExtractBits<T>(T value, params int[] bitPositions)
+            where T : struct
+        {
+            ulong raw = 0;
+            {
+                ulong tmp = 0;
+
+                byte* src = (byte*)&value;
+                byte* dst = (byte*)&tmp;
+
+                for (int i = 0; i < sizeof(T); ++i)
+                {
+                    dst[i] = src[i];
+                }
+
+                raw = tmp;
+            }
+
+            ulong result = 0;
+
+            for (int i = 0; i < bitPositions.Length; ++i)
+            {
+                int bitPos = bitPositions[i];
+                ulong bit = (raw >> bitPos) & 1UL;
+                result |= (bit << i);
+            }
+
+            T ret = default;
+            {
+                byte* src = (byte*)&result;
+                byte* dst = (byte*)&ret;
+
+                for (int i = 0; i < sizeof(T); ++i)
+                {
+                    dst[i] = src[i];
+                }
+            }
+
+            return ret;
+        }
     }
 }

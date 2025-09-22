@@ -9,15 +9,13 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
-using RAMSPDToolkit.I2CSMBus.Interop.PawnIO;
-
 namespace RAMSPDToolkit.Windows.Driver.Interfaces
 {
     /// <summary>
-    /// Driver interface for PawnIO implementation.
+    /// Interface for PawnIO module implementation.
     /// </summary>
-    public interface IPawnIODriver : IDriver
+    public interface IPawnIOModule
     {
-        IPawnIOModule LoadModule(PawnIOSMBusIdentifier pawnIOSMBusIdentifier);
+        int Execute(string name, long[] inBuffer, uint inSize, long[] outBuffer, uint outSize, out uint returnSize);
     }
 }
