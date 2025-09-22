@@ -107,7 +107,7 @@ namespace RAMSPDToolkit.I2CSMBus
 
             using (var guard = new WorldMutexGuard(WorldMutexManager.WorldSMBusMutex))
             {
-                status = PawnIO.Execute("ioctl_smbus_xfer", inBuffer, inSize, outBuffer, outSize, out var _);
+                status = PawnIO.Execute("ioctl_smbus_xfer", inBuffer, inSize, outBuffer, outSize, out _);
             }
 
             if (data != null)
@@ -206,7 +206,7 @@ namespace RAMSPDToolkit.I2CSMBus
 
             inBuffer[0] = port;
 
-            return pawnIO.Execute("ioctl_piix4_port_sel", inBuffer, inSize, outBuffer, outSize, out var _) == 0;
+            return pawnIO.Execute("ioctl_piix4_port_sel", inBuffer, inSize, outBuffer, outSize, out _) == 0;
         }
 
         void GetIdentity(IPawnIOModule pawnIO)
@@ -219,7 +219,7 @@ namespace RAMSPDToolkit.I2CSMBus
                 var inBuffer = new long[inSize];
                 var outBuffer = new long[outSize];
 
-                if (pawnIO.Execute("ioctl_identity", inBuffer, inSize, outBuffer, outSize, out var _) == 0)
+                if (pawnIO.Execute("ioctl_identity", inBuffer, inSize, outBuffer, outSize, out _) == 0)
                 {
                     PortID = SMBusManager.RegisteredSMBuses.Count; // Assign next available port ID
 
@@ -256,7 +256,7 @@ namespace RAMSPDToolkit.I2CSMBus
 
                 bool writeProtectionEnabled = false;
 
-                if (pawnIO.Execute("ioctl_write_protection", inBuffer, inSize, outBuffer, outSize, out var _) == 0)
+                if (pawnIO.Execute("ioctl_write_protection", inBuffer, inSize, outBuffer, outSize, out _) == 0)
                 {
                     writeProtectionEnabled = outBuffer[0] == 1;
                 }
