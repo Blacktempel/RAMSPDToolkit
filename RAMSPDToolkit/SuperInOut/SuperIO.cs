@@ -11,7 +11,7 @@
 
 using RAMSPDToolkit.Windows.Driver;
 
-using OS = RAMSPDToolkit.Software.OperatingSystem;
+using OS = BlackSharp.Core.Platform.OperatingSystem;
 
 namespace RAMSPDToolkit.SuperInOut
 {

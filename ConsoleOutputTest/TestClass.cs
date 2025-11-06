@@ -9,18 +9,18 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
-using RAMSPDToolkit.Extensions;
+using BlackSharp.Core.Converters;
+using BlackSharp.Core.Extensions;
+using BlackSharp.Core.Logging;
 using RAMSPDToolkit.I2CSMBus;
 using RAMSPDToolkit.I2CSMBusTools;
-using RAMSPDToolkit.Logging;
 using RAMSPDToolkit.SPD;
 using RAMSPDToolkit.SPD.Interfaces;
 using RAMSPDToolkit.SPD.Interop.Shared;
-using RAMSPDToolkit.Utilities;
 using RAMSPDToolkit.Windows.Driver;
 using RAMSPDToolkit.Windows.Driver.Implementations;
 
-using OS = RAMSPDToolkit.Software.OperatingSystem;
+using OS = BlackSharp.Core.Platform.OperatingSystem;
 
 namespace ConsoleOutputTest
 {

@@ -9,7 +9,7 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
-using RAMSPDToolkit.Extensions;
+using BlackSharp.Core.Extensions;
 using RAMSPDToolkit.Logging;
 using RAMSPDToolkit.SPD.Interop;
 

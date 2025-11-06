@@ -9,6 +9,8 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
+using BlackSharp.Core.Logging;
+
 namespace RAMSPDToolkit.Logging
 {
     internal static class LogSimple

@@ -9,16 +9,17 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
+using BlackSharp.Core.BitOperations;
+using BlackSharp.Core.Interop.Windows.Mutexes;
 using RAMSPDToolkit.I2CSMBus.Interop;
 using RAMSPDToolkit.I2CSMBus.Interop.PawnIO;
 using RAMSPDToolkit.Logging;
 using RAMSPDToolkit.Mutexes;
-using RAMSPDToolkit.Utilities;
 using RAMSPDToolkit.Windows.Driver;
 using RAMSPDToolkit.Windows.Driver.Interfaces;
 using System.Runtime.InteropServices;
 using System.Text;
-using OS = RAMSPDToolkit.Software.OperatingSystem;
+using OS = BlackSharp.Core.Platform.OperatingSystem;
 
 namespace RAMSPDToolkit.I2CSMBus
 {

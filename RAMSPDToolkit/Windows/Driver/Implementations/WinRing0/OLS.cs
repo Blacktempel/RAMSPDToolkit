@@ -12,11 +12,14 @@
 
 #if !RELEASE_NDD
 
+using BlackSharp.Core.Interop.Windows.Utilities;
 using RAMSPDToolkit.Logging;
 using RAMSPDToolkit.Windows.Driver.Implementations.WinRing0.Enums;
 using RAMSPDToolkit.Windows.Driver.Interfaces;
 using RAMSPDToolkit.Windows.Interop;
 using RAMSPDToolkit.Windows.Utilities;
+
+using OS = BlackSharp.Core.Platform.OperatingSystem;
 
 namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
 {
@@ -457,7 +460,7 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.WinRing0
         bool ExtractDriver()
         {
             //Check for Windows
-            if (!Software.OperatingSystem.IsWindows())
+            if (!OS.IsWindows())
             {
                 return false;
             }

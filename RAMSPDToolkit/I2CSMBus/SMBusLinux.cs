@@ -19,7 +19,7 @@ using RAMSPDToolkit.PCI.Linux;
 using System.Runtime.InteropServices;
 using System.Text;
 
-using OS = RAMSPDToolkit.Software.OperatingSystem;
+using OS = BlackSharp.Core.Platform.OperatingSystem;
 
 namespace RAMSPDToolkit.I2CSMBus
 {

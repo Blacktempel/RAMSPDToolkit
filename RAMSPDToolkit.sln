@@ -15,8 +15,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RAMSPDToolkit.Tests", "RAMSPDToolkit.Tests\RAMSPDToolkit.Tests.csproj", "{6648837D-9C3B-43B0-8180-BC6ABB42250F}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -78,21 +76,6 @@ Global
 		{43528505-C890-46A6-B593-6A7748B5AAFD}.Release|x64.Build.0 = Release|Any CPU
 		{43528505-C890-46A6-B593-6A7748B5AAFD}.Release|x86.ActiveCfg = Release|Any CPU
 		{43528505-C890-46A6-B593-6A7748B5AAFD}.Release|x86.Build.0 = Release|Any CPU
-		{6648837D-9C3B-43B0-8180-BC6ABB42250F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6648837D-9C3B-43B0-8180-BC6ABB42250F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6648837D-9C3B-43B0-8180-BC6ABB42250F}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{6648837D-9C3B-43B0-8180-BC6ABB42250F}.Debug|x64.Build.0 = Debug|Any CPU
-		{6648837D-9C3B-43B0-8180-BC6ABB42250F}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{6648837D-9C3B-43B0-8180-BC6ABB42250F}.Debug|x86.Build.0 = Debug|Any CPU
-		{6648837D-9C3B-43B0-8180-BC6ABB42250F}.Release_NDD|Any CPU.ActiveCfg = Release|Any CPU
-		{6648837D-9C3B-43B0-8180-BC6ABB42250F}.Release_NDD|x64.ActiveCfg = Release|Any CPU
-		{6648837D-9C3B-43B0-8180-BC6ABB42250F}.Release_NDD|x86.ActiveCfg = Release|Any CPU
-		{6648837D-9C3B-43B0-8180-BC6ABB42250F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6648837D-9C3B-43B0-8180-BC6ABB42250F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6648837D-9C3B-43B0-8180-BC6ABB42250F}.Release|x64.ActiveCfg = Release|Any CPU
-		{6648837D-9C3B-43B0-8180-BC6ABB42250F}.Release|x64.Build.0 = Release|Any CPU
-		{6648837D-9C3B-43B0-8180-BC6ABB42250F}.Release|x86.ActiveCfg = Release|Any CPU
-		{6648837D-9C3B-43B0-8180-BC6ABB42250F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

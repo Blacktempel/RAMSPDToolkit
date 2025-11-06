@@ -9,6 +9,7 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
+using BlackSharp.Core.Interop.Windows.Mutexes;
 using RAMSPDToolkit.I2CSMBus.Interop.Shared;
 using RAMSPDToolkit.PCI;
 

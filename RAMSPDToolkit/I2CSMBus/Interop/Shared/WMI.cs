@@ -14,7 +14,7 @@
 using System.Management;
 using System.Text.RegularExpressions;
 
-using OS = RAMSPDToolkit.Software.OperatingSystem;
+using OS = BlackSharp.Core.Platform.OperatingSystem;
 
 namespace RAMSPDToolkit.I2CSMBus.Interop.Shared
 {

@@ -9,33 +9,14 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
-using RAMSPDToolkit.Windows.Interop;
-using RAMSPDToolkit.Windows.Utilities;
+using BlackSharp.Core.Interop.Windows.Utilities;
 using System.Runtime.InteropServices;
 
 namespace RAMSPDToolkit.I2CSMBus.Interop.NVIDIA
 {
-    internal sealed class NVAPIModule : IDisposable
+    internal sealed class NVAPIModule : ModuleBase
     {
-        #region Constructor
-
-        public NVAPIModule()
-        {
-            IsModuleLoaded = LoadLibraryFunctions();
-        }
-
-        ~NVAPIModule()
-        {
-            Dispose();
-        }
-
-        #endregion
-
         #region Fields
-
-        bool _Disposed;
-
-        IntPtr _Module;
 
         internal NVAPI._NvAPI_QueryInterface NvAPI_QueryInterface;
 
@@ -47,56 +28,30 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.NVIDIA
 
         #endregion
 
-        #region Properties
+        #region Protected
 
-        public bool IsModuleLoaded { get; private set; }
-
-        #endregion
-
-        #region IDisposable
-
-        public void Dispose()
+        protected override string GetModuleFilename()
         {
-            if (!_Disposed)
-            {
-                if (_Module != IntPtr.Zero)
-                {
-                    Kernel32.FreeLibrary(_Module);
-                }
-
-                _Disposed = true;
-            }
-        }
-
-        #endregion
-
-        #region Private
-
-        bool LoadLibraryFunctions()
-        {
-            if (_Module != IntPtr.Zero)
-            {
-                //Already loaded
-                return true;
-            }
-
             if (IntPtr.Size == 4)
             {
                 //32-bit
-                _Module = Kernel32.LoadLibrary("nvapi.dll");
+                return "nvapi.dll";
             }
             else
             {
                 //64-bit
-                _Module = Kernel32.LoadLibrary("nvapi64.dll");
+                return "nvapi64.dll";
             }
+        }
 
-            if (_Module == IntPtr.Zero)
+        protected override bool LoadLibraryFunctions()
+        {
+            if (IsModuleLoaded)
             {
-                return false;
+                return true;
             }
 
-            NvAPI_QueryInterface = DynamicLoader.GetDelegate<NVAPI._NvAPI_QueryInterface>(_Module, "nvapi_QueryInterface");
+            NvAPI_QueryInterface = GetDelegate<NVAPI._NvAPI_QueryInterface>("nvapi_QueryInterface");
 
             if (NvAPI_QueryInterface == null)
             {
@@ -118,6 +73,10 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.NVIDIA
                 && NvAPI_I2CWriteEx            != null
                 ;
         }
+
+        #endregion
+
+        #region Private
 
         T QueryDelegate<T>(uint interfaceID)
             where T : Delegate

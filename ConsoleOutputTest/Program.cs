@@ -9,10 +9,10 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
+using BlackSharp.Core.Extensions;
+using BlackSharp.Core.Logging;
 using ConsoleOutputTest;
 using ConsoleOutputTest.Exceptions;
-using RAMSPDToolkit.Extensions;
-using RAMSPDToolkit.Logging;
 
 static class Program
 {

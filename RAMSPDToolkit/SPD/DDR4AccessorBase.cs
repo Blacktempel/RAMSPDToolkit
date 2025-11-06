@@ -9,6 +9,9 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
+using BlackSharp.Core.BitOperations;
+using BlackSharp.Core.ByteOperations;
+using BlackSharp.Core.Globalization;
 using RAMSPDToolkit.I2CSMBus;
 using RAMSPDToolkit.I2CSMBus.Interop.Shared;
 using RAMSPDToolkit.SPD.Enums;
@@ -16,7 +19,6 @@ using RAMSPDToolkit.SPD.Interfaces;
 using RAMSPDToolkit.SPD.Interop;
 using RAMSPDToolkit.SPD.Interop.Shared;
 using RAMSPDToolkit.SPD.Mappings;
-using RAMSPDToolkit.Utilities;
 using System.Text;
 
 namespace RAMSPDToolkit.SPD

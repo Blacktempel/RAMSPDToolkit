@@ -13,12 +13,12 @@
 
 #pragma warning disable CA1416 // Platform compatibility warning
 
+using BlackSharp.Core.Interop.Windows.Utilities;
 using Microsoft.Win32;
 using RAMSPDToolkit.Logging;
 using RAMSPDToolkit.Windows.Interop;
-using RAMSPDToolkit.Windows.Utilities;
 using System.Runtime.InteropServices;
-using OS = RAMSPDToolkit.Software.OperatingSystem;
+using OS = BlackSharp.Core.Platform.OperatingSystem;
 
 namespace RAMSPDToolkit.Windows.Driver.Implementations.PawnIO.Interop
 {
