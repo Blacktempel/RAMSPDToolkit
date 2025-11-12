@@ -18,7 +18,7 @@ Do this at your own risk and only if you know what you are doing.
 ## Project overview
 | Project | .NET Version[s] |
 | --- | --- |
-| **[RAMSPDToolkit](https://github.com/Blacktempel/RAMSPDToolkit/tree/master/RAMSPDToolkit)** <br/> RAM SPD functionality for your software / application. <br/> Also includes various SMBus implementations for Windows and Linux. | .NET Framework 4.7.2 & 4.8.1 <br/> .NET 8 & .NET 9 |
+| **[RAMSPDToolkit](https://github.com/Blacktempel/RAMSPDToolkit/tree/master/RAMSPDToolkit)** <br/> RAM SPD functionality for your software / application. <br/> Also includes various SMBus implementations for Windows and Linux. | .NET Framework 4.7.2 & 4.8.1 <br/> .NET 8, 9 and 10 |
 | **[ConsoleOutputTest](https://github.com/Blacktempel/RAMSPDToolkit/tree/master/ConsoleOutputTest)** <br/> Example Application to show how some library functionality can be used. | .NET 8 |
 | **[GZipSingleFile](https://github.com/Blacktempel/RAMSPDToolkit/tree/master/GZipSingleFile)** <br/> Small ("internal") console application used to zip driver files. | .NET 8 |
 | **[Tools](https://github.com/Blacktempel/RAMSPDToolkit/tree/master/Tools)** <br/> Tools for the project. | --- |

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0;net481;net472</TargetFrameworks>
+    <TargetFrameworks>net472;net481;net8.0;net9.0;net10.0</TargetFrameworks>
 	<LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
@@ -13,8 +13,8 @@
     <RepositoryUrl>https://github.com/Blacktempel/RAMSPDToolkit</RepositoryUrl>
     <PackageTags>ram; spd; tookit; thermal; sensor; ram temperature; ram thermal data; thermal sensor; monitoring; system; i2c; smbus; intel; amd</PackageTags>
     <PackageLicenseExpression>MPL-2.0</PackageLicenseExpression>
-    <AssemblyVersion>1.4.0</AssemblyVersion>
-    <FileVersion>1.4.0</FileVersion>
+    <AssemblyVersion>1.4.1</AssemblyVersion>
+    <FileVersion>1.4.1</FileVersion>
     <Version>$(AssemblyVersion)</Version>
     <PackageIcon>packageicon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -29,11 +29,20 @@
     <AssemblyName>$(MSBuildProjectName)-NDD</AssemblyName>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net472|AnyCPU'">
     <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net481|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net472|AnyCPU'">
+    <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release_NDD|net472|AnyCPU'">
+    <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
+    <DefineConstants>$(DefineConstants);RELEASE_NDD</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0|AnyCPU'">
     <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
   </PropertyGroup>
 
@@ -44,6 +53,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release_NDD|net8.0|AnyCPU'">
     <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
     <DefineConstants>$(DefineConstants);RELEASE_NDD</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net481|AnyCPU'">
+    <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net481|AnyCPU'">
@@ -68,17 +81,16 @@
     <DefineConstants>$(DefineConstants);RELEASE_NDD</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net472|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net10.0|AnyCPU'">
     <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net472|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net10.0|AnyCPU'">
     <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release_NDD|net472|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release_NDD|net10.0|AnyCPU'">
     <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
-    <DefineConstants>$(DefineConstants);RELEASE_NDD</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -109,8 +121,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BlackSharp.Core" Version="1.0.2" />
-    <PackageReference Include="System.Management" Version="9.0.10" />
+    <PackageReference Include="BlackSharp.Core" Version="1.0.3" />
+    <PackageReference Include="System.Management" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
