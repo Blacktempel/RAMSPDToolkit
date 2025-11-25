@@ -10,6 +10,7 @@
  */
 
 using BlackSharp.Core.BitOperations;
+using BlackSharp.Core.Extensions;
 using RAMSPDToolkit.I2CSMBus;
 using RAMSPDToolkit.I2CSMBus.Interop.Shared;
 using RAMSPDToolkit.Logging;
@@ -137,11 +138,14 @@ namespace RAMSPDToolkit.SPD
 
             Thread.Sleep(SPDConstants.SPD_IO_DELAY);
 
-            //Read value at address 0
-            value = bus.i2c_smbus_read_byte_data(address, 0x00);
+            //Read memory type
+            value = bus.i2c_smbus_read_byte_data(address, DDR4Constants.SPD_DDR4_MODULE_MEMORY_TYPE);
 
-            //DDR4 is available if value is 0x23
-            return value == 0x23;
+            //Check if memory type is DDR4
+            return ((SPDMemoryType)value).AnyOf(SPDMemoryType.SPD_DDR4_SDRAM,
+                                                SPDMemoryType.SPD_DDR4E_SDRAM,
+                                                SPDMemoryType.SPD_LPDDR4_SDRAM,
+                                                SPDMemoryType.SPD_LPDDR4X_SDRAM);
         }
 
         #endregion
