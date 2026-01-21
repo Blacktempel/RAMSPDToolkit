@@ -136,7 +136,7 @@
 
   <ItemGroup>
     <PackageReference Include="BlackSharp.Core" Version="1.0.7" />
-    <PackageReference Include="System.Management" Version="10.0.1" />
+    <PackageReference Include="System.Management" Version="10.0.2" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
