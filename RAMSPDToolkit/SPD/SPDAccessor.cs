@@ -24,10 +24,10 @@ namespace RAMSPDToolkit.SPD
     {
         #region Constructor
 
-        protected SPDAccessor(SMBusInterface bus, byte address)
+        protected SPDAccessor(SMBusInterface bus, byte index)
         {
             _Bus = bus;
-            _Address = address;
+            Index = index;
         }
 
         ~SPDAccessor()
@@ -41,7 +41,6 @@ namespace RAMSPDToolkit.SPD
         #region Fields
 
         protected SMBusInterface _Bus;
-        protected byte _Address;
 
         protected PageData _PageData = PageData.Nothing;
 
@@ -52,7 +51,7 @@ namespace RAMSPDToolkit.SPD
         /// <summary>
         /// Index / slot of RAM stick, starting at zero (0).
         /// </summary>
-        public byte Index => (byte)(_Address - SPDConstants.SPD_BEGIN);
+        public byte Index { get; }
 
         /// <summary>
         /// <inheritdoc cref="SMBusInterface.HasSPDWriteProtection"/>

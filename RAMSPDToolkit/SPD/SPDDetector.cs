@@ -84,21 +84,32 @@ namespace RAMSPDToolkit.SPD
         {
             SPDAccessor accessor = null;
 
-            if ( (_MemoryType == SPDMemoryType.SPD_RESERVED ||
-                    _MemoryType == SPDMemoryType.SPD_DDR4_SDRAM ||
-                    _MemoryType == SPDMemoryType.SPD_DDR4E_SDRAM ||
-                    _MemoryType == SPDMemoryType.SPD_LPDDR4_SDRAM ||
-                    _MemoryType == SPDMemoryType.SPD_LPDDR4X_SDRAM ) &&
-                DDR4Accessor.IsAvailable(_Bus, _Address))
+            var pcuSlot = (byte)(_Address - SPDConstants.SPD_BEGIN);
+
+            if (  ( _MemoryType == SPDMemoryType.SPD_RESERVED
+                 || _MemoryType == SPDMemoryType.SPD_DDR4_SDRAM
+                 || _MemoryType == SPDMemoryType.SPD_DDR4E_SDRAM
+                 || _MemoryType == SPDMemoryType.SPD_LPDDR4_SDRAM
+                 || _MemoryType == SPDMemoryType.SPD_LPDDR4X_SDRAM )
+             && DDR4Accessor.IsAvailable(_Bus, _Address))
             {
                 accessor = new DDR4Accessor(_Bus, _Address);
             }
-            else if ( (_MemoryType == SPDMemoryType.SPD_RESERVED ||
-                        _MemoryType == SPDMemoryType.SPD_DDR5_SDRAM ||
-                        _MemoryType == SPDMemoryType.SPD_LPDDR5_SDRAM ) &&
-                        DDR5Accessor.IsAvailable(_Bus, _Address))
+            else if (  (_MemoryType == SPDMemoryType.SPD_RESERVED
+                     || _MemoryType == SPDMemoryType.SPD_DDR5_SDRAM
+                     || _MemoryType == SPDMemoryType.SPD_LPDDR5_SDRAM )
+             && DDR5Accessor.IsAvailable(_Bus, _Address))
             {
                 accessor = new DDR5Accessor(_Bus, _Address);
+            }
+            else if (  (_MemoryType == SPDMemoryType.SPD_RESERVED
+                     || _MemoryType == SPDMemoryType.SPD_DDR4_SDRAM
+                     || _MemoryType == SPDMemoryType.SPD_DDR4E_SDRAM
+                     || _MemoryType == SPDMemoryType.SPD_LPDDR4_SDRAM
+                     || _MemoryType == SPDMemoryType.SPD_LPDDR4X_SDRAM )
+             && DDR4AccessorPCU.IsAvailable(_Bus, pcuSlot))
+            {
+                accessor = new DDR4AccessorPCU(_Bus, pcuSlot);
             }
             else if (_MemoryType == SPDMemoryType.SPD_RESERVED)
             {

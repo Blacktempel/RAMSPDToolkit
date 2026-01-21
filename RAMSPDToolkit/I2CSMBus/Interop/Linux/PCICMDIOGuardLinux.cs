@@ -31,7 +31,7 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.Shared
             {
                 //Enable I/O
                 _PCICMDModified = (ushort)(_PCICMDOriginal | SharedConstants.PCI_CMD_IO_BIT);
-                PCIConfigAccessor.WritePCIConfig(_PCIConfigPath, SharedConstants.PCICMD, _PCICMDModified.Value);
+                PCIConfigAccessor.WritePCIConfigInt16(_PCIConfigPath, SharedConstants.PCICMD, _PCICMDModified.Value);
             }
         }
 
@@ -53,7 +53,7 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.Shared
             if (_PCICMDModified.HasValue)
             {
                 //Reset back to original
-                PCIConfigAccessor.WritePCIConfig(_PCIConfigPath, SharedConstants.PCICMD, _PCICMDOriginal);
+                PCIConfigAccessor.WritePCIConfigInt16(_PCIConfigPath, SharedConstants.PCICMD, _PCICMDOriginal);
             }
         }
 

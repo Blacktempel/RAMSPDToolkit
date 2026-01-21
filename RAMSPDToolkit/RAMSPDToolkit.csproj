@@ -13,8 +13,8 @@
     <RepositoryUrl>https://github.com/Blacktempel/RAMSPDToolkit</RepositoryUrl>
     <PackageTags>ram; spd; tookit; thermal; sensor; ram temperature; ram thermal data; thermal sensor; monitoring; system; i2c; smbus; intel; amd</PackageTags>
     <PackageLicenseExpression>MPL-2.0</PackageLicenseExpression>
-    <AssemblyVersion>1.4.2</AssemblyVersion>
-    <FileVersion>1.4.2</FileVersion>
+    <AssemblyVersion>1.5.0</AssemblyVersion>
+    <FileVersion>1.5.0</FileVersion>
     <Version>$(AssemblyVersion)</Version>
     <PackageIcon>packageicon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -104,6 +104,7 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release_NDD|net10.0|AnyCPU'">
     <NoWarn>1701;1702;0649;8632;8500;1591</NoWarn>
+    <DefineConstants>$(DefineConstants);RELEASE_NDD</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

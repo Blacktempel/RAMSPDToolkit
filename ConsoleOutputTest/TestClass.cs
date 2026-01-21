@@ -13,13 +13,13 @@ using BlackSharp.Core.Converters;
 using BlackSharp.Core.Extensions;
 using BlackSharp.Core.Logging;
 using RAMSPDToolkit.I2CSMBus;
+using RAMSPDToolkit.I2CSMBus.Interop.PawnIO;
 using RAMSPDToolkit.I2CSMBusTools;
 using RAMSPDToolkit.SPD;
 using RAMSPDToolkit.SPD.Interfaces;
 using RAMSPDToolkit.SPD.Interop.Shared;
 using RAMSPDToolkit.Windows.Driver;
 using RAMSPDToolkit.Windows.Driver.Implementations;
-
 using OS = BlackSharp.Core.Platform.OperatingSystem;
 
 namespace ConsoleOutputTest
@@ -91,14 +91,20 @@ namespace ConsoleOutputTest
                         linux.CheckFuncs();
                     }
 
-                    //This outputs a table with detected devices for each "functionality"
-                    Log();
-                    Log("  Running detection for SMBus.");
-                    Log();
-                    Log($"    Mode {nameof(I2CSMBusDetect.MODE_AUTO )}:{Environment.NewLine}{I2CSMBusDetect.I2CDetect(bus, I2CSMBusDetect.MODE_AUTO )}");
-                    Log($"    Mode {nameof(I2CSMBusDetect.MODE_QUICK)}:{Environment.NewLine}{I2CSMBusDetect.I2CDetect(bus, I2CSMBusDetect.MODE_QUICK)}");
-                    Log($"    Mode {nameof(I2CSMBusDetect.MODE_READ )}:{Environment.NewLine}{I2CSMBusDetect.I2CDetect(bus, I2CSMBusDetect.MODE_READ )}");
-                    Log();
+                    if (bus is SMBusPCU
+                     || (bus is SMBusPawnIO p && p.PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelPCU))
+                    { }
+                    else
+                    {
+                        //This outputs a table with detected devices for each "functionality"
+                        Log();
+                        Log("  Running detection for SMBus.");
+                        Log();
+                        Log($"    Mode {nameof(I2CSMBusDetect.MODE_AUTO )}:{Environment.NewLine}{I2CSMBusDetect.I2CDetect(bus, I2CSMBusDetect.MODE_AUTO )}");
+                        Log($"    Mode {nameof(I2CSMBusDetect.MODE_QUICK)}:{Environment.NewLine}{I2CSMBusDetect.I2CDetect(bus, I2CSMBusDetect.MODE_QUICK)}");
+                        Log($"    Mode {nameof(I2CSMBusDetect.MODE_READ )}:{Environment.NewLine}{I2CSMBusDetect.I2CDetect(bus, I2CSMBusDetect.MODE_READ )}");
+                        Log();
+                    }
 
                     //See if the SPDs are available
                     //SPDs are accessed not through a list, but are hard coded for a full stack of RAM modules.
@@ -147,6 +153,14 @@ namespace ConsoleOutputTest
 
                 //DDR4 set page address is not within the write protected range, so we can safely ignore that
                 TryReadSPDData<DDR4Accessor>(bus, i);
+            }
+
+            var slot = (byte)(i - SPDConstants.SPD_BEGIN);
+            if (DDR4AccessorPCU.IsAvailable(bus, slot))
+            {
+                Log($"{nameof(DDR4AccessorPCU)} available at {slot}.");
+
+                TryReadSPDData<DDR4AccessorPCU>(bus, slot);
             }
         }
 

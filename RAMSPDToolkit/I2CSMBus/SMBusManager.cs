@@ -108,15 +108,18 @@ namespace RAMSPDToolkit.I2CSMBus
                             smbusDetectMethods.Add(WindowsSMBusDetector.DetectSMBuses);
                         }
 
-                        //smbusDetectMethods.Add(I2CSMBusAmdAdl.SMBusDetect);
-                        //smbusDetectMethods.Add(SMBusNVAPI    .SMBusDetect);
+                        smbusDetectMethods.Add(SMBusPCU    .SMBusDetect);
                         smbusDetectMethods.Add(SMBusNCT6775.SMBusDetect);
                     }
                 }
+
+                //smbusDetectMethods.Add(I2CSMBusAmdAdl.SMBusDetect);
+                //smbusDetectMethods.Add(SMBusNVAPI.SMBusDetect);
             }
             else if (OS.IsLinux())
             {
                 smbusDetectMethods.Add(SMBusLinux.SMBusDetect);
+                smbusDetectMethods.Add(SMBusPCU  .SMBusDetect);
             }
 
             LogSimple.LogTrace($"Detecting SMBuses - amount of available detection methods are {smbusDetectMethods.Count}.");

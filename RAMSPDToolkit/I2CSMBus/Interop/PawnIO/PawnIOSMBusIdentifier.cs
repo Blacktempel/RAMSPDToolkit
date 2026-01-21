@@ -19,5 +19,6 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.PawnIO
         I801,
         Piix4,
         NCT6793,
+        IntelPCU,
     }
 }

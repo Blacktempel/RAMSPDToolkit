@@ -12,7 +12,9 @@
 using BlackSharp.Core.BitOperations;
 using BlackSharp.Core.Extensions;
 using RAMSPDToolkit.I2CSMBus;
-using RAMSPDToolkit.I2CSMBus.Interop.Shared;
+using RAMSPDToolkit.I2CSMBus.Interfaces;
+using RAMSPDToolkit.I2CSMBus.Interop.Intel;
+using RAMSPDToolkit.I2CSMBus.Interop.PawnIO;
 using RAMSPDToolkit.Logging;
 using RAMSPDToolkit.SPD.Interfaces;
 using RAMSPDToolkit.SPD.Interop;
@@ -23,21 +25,20 @@ using RAMSPDToolkit.Utilities;
 namespace RAMSPDToolkit.SPD
 {
     /// <summary>
-    /// Accessor for DDR4 SPD.<br/>
+    /// Accessor for DDR4 SPD via PCU.<br/>
     /// This works for Windows and Linux.
     /// </summary>
     /// <remarks>Please refer to JEDEC Standard for EE1004 and TSE2004av for property definitions.</remarks>
-    public sealed class DDR4Accessor : DDR4AccessorBase, IThermalDataDDR4
+    public sealed class DDR4AccessorPCU : DDR4AccessorBase, IThermalDataDDR4
     {
         #region Constructor
 
-        public DDR4Accessor(SMBusInterface bus, byte address)
-            : base(bus, (byte)(address - SPDConstants.SPD_BEGIN))
+        public DDR4AccessorPCU(SMBusInterface bus, byte slot)
+            : base(bus, (byte)(((bus as IIntelPCUSMBus).SMBusIndex * 4) + slot))
         {
-            _Address = address;
-
-            //Set thermal sensor address
-            _ThermalSensorAddress = (byte)(0x18 | (address & 0x07));
+            _Slot = slot;
+            _SPDEncoded = PCUUtilities.Encode(SPDOpcode, _Slot);
+            _ThermalEncoded = PCUUtilities.Encode(ThermalSensorOpcode, _Slot);
 
             //Check for thermal sensor
             HasThermalSensor = ProbeThermalSensor();
@@ -55,8 +56,13 @@ namespace RAMSPDToolkit.SPD
 
         #region Fields
 
-        readonly byte _Address;
-        readonly byte _ThermalSensorAddress;
+        const byte SPDOpcode = 0xA;
+        const byte ThermalSensorOpcode = 0x3;
+
+        readonly byte _Slot;
+
+        readonly byte _SPDEncoded;
+        readonly byte _ThermalEncoded;
 
         #endregion
 
@@ -79,57 +85,33 @@ namespace RAMSPDToolkit.SPD
 
         #region Public
 
-        /// <summary>
-        /// Detects if a DDR4 RAM is available at specified address.
-        /// </summary>
-        /// <param name="bus">SMBus to check for RAM.</param>
-        /// <param name="address">Address to check.</param>
-        /// <returns>True if DDR4 is available at specified address; false otherwise.</returns>
-        public static bool IsAvailable(SMBusInterface bus, byte address)
+        public static bool IsAvailable(SMBusInterface bus, byte slot)
         {
-            //Perform quick transfer to test if i2c address responds
-            int value = bus.i2c_smbus_write_quick(DDR4Constants.SPD_DDR4_ADDRESS_PAGE, 0x00);
-
-            int retries = SPDConstants.SPD_CFG_RETRIES;
-
-            if (value < 0 && retries > 0)
-            {
-                var statusAbs = Math.Abs(value);
-
-                //Try again specified number of times and give up
-                if (statusAbs == SharedConstants.EBUSY ||
-                    statusAbs == SharedConstants.ETIMEDOUT)
-                {
-                    int MAX_RETRIES = retries;
-                    int retry = MAX_RETRIES;
-
-                    while (value < 0 && retry-- > 0)
-                    {
-                        Thread.Sleep(SPDConstants.SPD_IO_DELAY);
-
-                        value = bus.i2c_smbus_write_quick(DDR4Constants.SPD_DDR4_ADDRESS_PAGE, 0x00);
-                    }
-                }
-            }
-
-            if (value < 0)
+            if (bus is SMBusPCU
+             || (bus is SMBusPawnIO p && p.PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelPCU))
+            { }
+            else
             {
                 return false;
             }
 
-            //Select first page
-            bus.i2c_smbus_write_byte_data(DDR4Constants.SPD_DDR4_ADDRESS_PAGE, 0x00, DDR4Constants.SPD_DDR4_EEPROM_PAGE_MASK);
-
-            Thread.Sleep(SPDConstants.SPD_IO_DELAY);
+            var spdEncoded = PCUUtilities.Encode(SPDOpcode, slot);
 
             //Read memory type
-            value = bus.i2c_smbus_read_byte_data(address, DDR4Constants.SPD_DDR4_MODULE_MEMORY_TYPE);
+            var status = bus.i2c_smbus_read_byte_data(DDR4Constants.SPD_DDR4_MODULE_MEMORY_TYPE, spdEncoded);
+
+            if (status < 0)
+            {
+                LogSimple.LogTrace($"{nameof(DDR4AccessorPCU)}.{nameof(IsAvailable)} failed to read memory type due to error {status}.");
+
+                return false;
+            }
 
             //Check if memory type is DDR4
-            return ((SPDMemoryType)value).AnyOf(SPDMemoryType.SPD_DDR4_SDRAM,
-                                                SPDMemoryType.SPD_DDR4E_SDRAM,
-                                                SPDMemoryType.SPD_LPDDR4_SDRAM,
-                                                SPDMemoryType.SPD_LPDDR4X_SDRAM);
+            return ((SPDMemoryType)status).AnyOf(SPDMemoryType.SPD_DDR4_SDRAM,
+                                                 SPDMemoryType.SPD_DDR4E_SDRAM,
+                                                 SPDMemoryType.SPD_LPDDR4_SDRAM,
+                                                 SPDMemoryType.SPD_LPDDR4X_SDRAM);
         }
 
         #endregion
@@ -145,15 +127,20 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Switch to the page containing address
-            SetPage((byte)(address >> DDR4Constants.SPD_DDR4_EEPROM_PAGE_SHIFT));
+            if (address < PCUConstants.PageSize)
+            {
+                SetPage(0);
+            }
+            else
+            {
+                SetPage(1);
 
-            //Calculate offset
-            byte offset = (byte)(address & DDR4Constants.SPD_DDR4_EEPROM_PAGE_MASK);
+                //Adjust address to be within page
+                address -= PCUConstants.PageSize;
+            }
 
-            //Read value at address
-            RetryReadByteData(_Bus, _Address, offset, SPDConstants.SPD_DATA_RETRIES, out var value);
-
-            Thread.Sleep(SPDConstants.SPD_IO_DELAY);
+            //Read value
+            RetryReadByteData(_Bus, (byte)address, _SPDEncoded, SPDConstants.SPD_DATA_RETRIES, out var value);
 
             //Return value
             return value;
@@ -164,7 +151,7 @@ namespace RAMSPDToolkit.SPD
             //Set page to 0 to read volatile data
             SetPage(0);
 
-            var status = RetryReadWordDataSwapped(_Bus, _ThermalSensorAddress, DDR4Constants.SPD_DDR4_TEMPERATURE_ADDRESS, SPDConstants.SPD_TS_RETRIES, out ushort temp);
+            var status = RetryReadWordDataSwapped(_Bus, DDR4Constants.SPD_DDR4_TEMPERATURE_ADDRESS, _ThermalEncoded, SPDConstants.SPD_TS_RETRIES, out ushort temp);
 
             temp = RawTemperatureAdjust(temp);
 
@@ -180,16 +167,26 @@ namespace RAMSPDToolkit.SPD
             return status >= 0;
         }
 
+        protected override void SetPage(byte page)
+        {
+            if (_Bus is SMBusPCU pcu)
+            {
+                pcu.SetBank(page);
+            }
+            else if (_Bus is SMBusPawnIO pcuPawnIO
+                  && pcuPawnIO.PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelPCU)
+            {
+                pcuPawnIO.SetBank(page);
+            }
+        }
+
         #endregion
 
         #region Private
 
         bool ProbeThermalSensor()
         {
-            //Set page to 0 in order to read
-            SetPage(0);
-
-            var status = _Bus.i2c_smbus_read_byte_data(_Address, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_BYTE);
+            var status = _Bus.i2c_smbus_read_byte_data(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_BYTE, _SPDEncoded);
 
             if (status < 0)
             {
@@ -200,25 +197,25 @@ namespace RAMSPDToolkit.SPD
                 //Check if thermal sensor bit is set
                 if (BitHandler.IsBitSet((byte)status, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_BIT))
                 {
-                    LogSimple.LogTrace($"0x{_Address:X2} has {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_BIT)} set.");
+                    LogSimple.LogTrace($"{nameof(DDR4AccessorPCU)} ({Index}) has {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_BIT)} set.");
                     return true;
                 }
                 else
                 {
-                    LogSimple.LogTrace($"0x{_Address:X2} does not have {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_BIT)} set.");
+                    LogSimple.LogTrace($"{nameof(DDR4AccessorPCU)} ({Index}) does not have {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_BIT)} set.");
                     LogSimple.LogTrace($"Checking another way if thermal sensor is present.");
 
-                    //Do a quick read to the thermal sensors address to check if it is available
-                    status = _Bus.i2c_smbus_write_quick(_ThermalSensorAddress, 0x00);
+                    //Do a read to the thermal sensors address to check if it is available
+                    status = _Bus.i2c_smbus_read_byte_data(0x00, _ThermalEncoded);
 
                     if (status < 0)
                     {
-                        LogSimple.LogTrace($"0x{_Address:X2} Thermal sensor not found.");
+                        LogSimple.LogTrace($"{nameof(DDR4AccessorPCU)} ({Index}) Thermal sensor not found.");
                     }
                     else
                     {
                         //If there is an ACK to the quick read, there is an "unregistered" thermal sensor
-                        LogSimple.LogTrace($"0x{_Address:X2} Unregistered thermal sensor found.");
+                        LogSimple.LogTrace($"{nameof(DDR4AccessorPCU)} ({Index}) Unregistered thermal sensor found.");
 
                         return true;
                     }
@@ -236,7 +233,7 @@ namespace RAMSPDToolkit.SPD
             ushort wordTemp;
 
             //Sensor Capabilities
-            var status = RetryReadWordDataSwapped(_Bus, _ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CAPABILITIES_REGISTER, retries, out wordTemp);
+            var status = RetryReadWordDataSwapped(_Bus, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CAPABILITIES_REGISTER, _ThermalEncoded, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CAPABILITIES_REGISTER)} failed with status {status}.");
@@ -251,7 +248,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Sensor Configuration
-            status = RetryReadWordDataSwapped(_Bus, _ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CONFIGURATION_REGISTER, retries, out wordTemp);
+            status = RetryReadWordDataSwapped(_Bus, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CONFIGURATION_REGISTER, _ThermalEncoded, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CONFIGURATION_REGISTER)} failed with status {status}.");
@@ -264,7 +261,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Sensor High Limit
-            status = RetryReadWordDataSwapped(_Bus, _ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_HIGH_LIMIT, retries, out wordTemp);
+            status = RetryReadWordDataSwapped(_Bus, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_HIGH_LIMIT, _ThermalEncoded, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_HIGH_LIMIT)} failed with status {status}.");
@@ -279,7 +276,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Sensor Low Limit
-            status = RetryReadWordDataSwapped(_Bus, _ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_LOW_LIMIT, retries, out wordTemp);
+            status = RetryReadWordDataSwapped(_Bus, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_LOW_LIMIT, _ThermalEncoded, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_LOW_LIMIT)} failed with status {status}.");
@@ -294,7 +291,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Sensor Critical Limit
-            status = RetryReadWordDataSwapped(_Bus, _ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CRIT_LIMIT, retries, out wordTemp);
+            status = RetryReadWordDataSwapped(_Bus, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CRIT_LIMIT, _ThermalEncoded, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CRIT_LIMIT)} failed with status {status}.");
@@ -309,7 +306,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Sensor Manufacturer
-            status = RetryReadWordDataSwapped(_Bus, _ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_MANUFACTURER, retries, out wordTemp);
+            status = RetryReadWordDataSwapped(_Bus, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_MANUFACTURER, _ThermalEncoded, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_MANUFACTURER)} failed with status {status}.");
@@ -322,7 +319,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Sensor DeviceID / Revision Register
-            status = RetryReadWordDataSwapped(_Bus, _ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_DEVICEID, retries, out wordTemp);
+            status = RetryReadWordDataSwapped(_Bus, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_DEVICEID, _ThermalEncoded, retries, out wordTemp);
             if (status < 0)
             {
                 LogSimple.LogTrace($"Reading {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_DEVICEID)} failed with status {status}.");

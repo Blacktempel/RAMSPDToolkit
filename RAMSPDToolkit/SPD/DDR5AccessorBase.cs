@@ -34,8 +34,10 @@ namespace RAMSPDToolkit.SPD
         #region Constructor
 
         protected DDR5AccessorBase(SMBusInterface bus, byte address)
-            : base(bus, address)
+            : base(bus, (byte)(address - SPDConstants.SPD_BEGIN))
         {
+            _Address = address;
+
             ReadWriteRecoveryTime(SPDConstants.SPD_CFG_RETRIES);
 
             var page = GetPage();
@@ -45,6 +47,12 @@ namespace RAMSPDToolkit.SPD
                 _PageData = pageData;
             }
         }
+
+        #endregion
+
+        #region Fields
+
+        protected readonly byte _Address;
 
         #endregion
 

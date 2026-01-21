@@ -30,8 +30,8 @@ namespace RAMSPDToolkit.SPD
     {
         #region Constructor
 
-        protected DDR4AccessorBase(SMBusInterface bus, byte address)
-            : base(bus, address)
+        protected DDR4AccessorBase(SMBusInterface bus, byte index)
+            : base(bus, index)
         {
             var page = GetPage();
 
@@ -250,6 +250,18 @@ namespace RAMSPDToolkit.SPD
         #region IThermalSensor
 
         public abstract bool UpdateTemperature();
+
+        #endregion
+
+        #region Protected
+
+        protected ushort RawTemperatureAdjust(ushort rawTemperature)
+        {
+            //Strip away not required bits
+            rawTemperature = (ushort)(rawTemperature & 0xFFF);
+
+            return rawTemperature;
+        }
 
         #endregion
 

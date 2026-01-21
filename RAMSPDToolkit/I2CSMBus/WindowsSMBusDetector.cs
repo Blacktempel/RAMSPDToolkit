@@ -131,7 +131,7 @@ namespace RAMSPDToolkit.I2CSMBus
                                     if (baseClass != PCIConstants.PCI_BASECLASS_SERIAL_BUS_CONTROLLER
                                      || subClass  != PCIConstants.PCI_SUBCLASS_SMBUS)
                                     {
-                                        LogSimple.LogWarn($"Verifying device from PCI configuration as SMBus was not successful ({nameof(baseClass)} = '0x{baseClass:X2}' and {nameof(subClass)} = '0x{subClass:X2}').");
+                                        LogSimple.LogTrace($"Verifying device from PCI configuration as SMBus was not successful ({nameof(baseClass)} = '0x{baseClass:X2}' and {nameof(subClass)} = '0x{subClass:X2}').");
                                         continue;
                                     }
 
@@ -188,7 +188,7 @@ namespace RAMSPDToolkit.I2CSMBus
                                                 else
                                                 {
                                                     //If the SMBA reads out zero, the SMBus base address has not been initialized and can't be linked to the I/O space.
-                                                    LogSimple.LogWarn($"SMBA is invalid (0x{smba:X4} ({smba})) and assumed to be uninitialized.");
+                                                    LogSimple.LogTrace($"SMBA is invalid (0x{smba:X4} ({smba})) and assumed to be uninitialized.");
 
                                                     Piix4InitDefaultSMBA(pciAddress, vendor, device, subsysVendor, subsysDevice, deviceName);
                                                 }

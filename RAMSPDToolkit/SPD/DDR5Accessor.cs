@@ -91,7 +91,7 @@ namespace RAMSPDToolkit.SPD
 
             if (status < 0)
             {
-                LogSimple.LogWarn($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to read current page due to error {status}.");
+                LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to read current page due to error {status}.");
             }
 
             //First 3 bits of the MR11 register
@@ -108,7 +108,7 @@ namespace RAMSPDToolkit.SPD
 
                     if (status < 0)
                     {
-                        LogSimple.LogWarn($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to change current page due to error {page}.");
+                        LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to change current page due to error {page}.");
                         return false;
                     }
 
@@ -116,14 +116,14 @@ namespace RAMSPDToolkit.SPD
                 }
                 else //Write protection is active
                 {
-                    LogSimple.LogWarn($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} page is off and {nameof(bus.HasSPDWriteProtection)} is active. Trying to change page via {nameof(IntelConstants.I801_PROC_CALL)}.");
+                    LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} page is off and {nameof(bus.HasSPDWriteProtection)} is active. Trying to change page via {nameof(IntelConstants.I801_PROC_CALL)}.");
 
                     //Change page to 0
                     status = bus.i2c_smbus_proc_call(address, I2CConstants.I2C_SMBUS_READ, DDR5Constants.SPD_DDR5_MREG_VIRTUAL_PAGE, 0);
 
                     if (status < 0)
                     {
-                        LogSimple.LogWarn($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to change current page due to error {page}.");
+                        LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to change current page due to error {page}.");
                         return false;
                     }
                 }
@@ -135,7 +135,7 @@ namespace RAMSPDToolkit.SPD
 
             if (result < 0)
             {
-                LogSimple.LogWarn($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to read {nameof(DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST)} due to error {result}.");
+                LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to read {nameof(DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST)} due to error {result}.");
             }
 
             //Try read least significant byte
@@ -144,7 +144,7 @@ namespace RAMSPDToolkit.SPD
 
             if (result < 0)
             {
-                LogSimple.LogWarn($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to read {nameof(DDR5Constants.SPD_DDR5_DEVICE_TYPE_LEAST)} due to error {result}.");
+                LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to read {nameof(DDR5Constants.SPD_DDR5_DEVICE_TYPE_LEAST)} due to error {result}.");
             }
 
             //Is it a DDR5 module ?

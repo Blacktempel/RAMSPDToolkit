@@ -11,6 +11,7 @@
 
 using BlackSharp.Core.BitOperations;
 using BlackSharp.Core.Interop.Windows.Mutexes;
+using RAMSPDToolkit.I2CSMBus.Interfaces;
 using RAMSPDToolkit.I2CSMBus.Interop;
 using RAMSPDToolkit.I2CSMBus.Interop.PawnIO;
 using RAMSPDToolkit.Logging;
@@ -25,9 +26,9 @@ namespace RAMSPDToolkit.I2CSMBus
 {
     /// <summary>
     /// SMBus class for <see cref="IPawnIODriver"/> driver.<br/>
-    /// Supports I801, Piix4 and NCT6793.
+    /// Supports I801, Piix4, NCT6793 and Intel PCU.
     /// </summary>
-    public sealed class SMBusPawnIO : SMBusInterface
+    public sealed class SMBusPawnIO : SMBusInterface, IIntelPCUSMBus
     {
         #region Constructor
 
@@ -58,6 +59,11 @@ namespace RAMSPDToolkit.I2CSMBus
         /// Identifies SMBus type.
         /// </summary>
         public PawnIOSMBusIdentifier PawnIOSMBusIdentifier { get; private set; }
+
+        /// <summary>
+        /// Only valid if <see cref="PawnIOSMBusIdentifier"/> is set to <see cref="PawnIOSMBusIdentifier.IntelPCU"/>.
+        /// </summary>
+        public byte SMBusIndex { get; internal set; } = byte.MaxValue;
 
         #endregion
 
@@ -142,6 +148,8 @@ namespace RAMSPDToolkit.I2CSMBus
                 return false;
             }
 
+            bool any = false;
+
             //Lock SMBus mutex
             using (var smbm = new WorldMutexGuard(WorldMutexManager.WorldSMBusMutex))
             {
@@ -153,7 +161,7 @@ namespace RAMSPDToolkit.I2CSMBus
                     if (i801 != null)
                     {
                         SMBusManager.AddSMBus(new SMBusPawnIO(i801, PawnIOSMBusIdentifier.I801));
-                        return true;
+                        any = true;
                     }
 
                     //Piix4
@@ -174,7 +182,7 @@ namespace RAMSPDToolkit.I2CSMBus
                             }
                         }
 
-                        return true;
+                        any = true;
                     }
 
                     //NCT6793
@@ -182,12 +190,58 @@ namespace RAMSPDToolkit.I2CSMBus
                     if (nct6793 != null)
                     {
                         SMBusManager.AddSMBus(new SMBusPawnIO(nct6793, PawnIOSMBusIdentifier.NCT6793));
-                        return true;
+                        any = true;
+                    }
+
+                    //Intel PCU
+                    var intelPcu = pawnIO.LoadModule(PawnIOSMBusIdentifier.IntelPCU);
+                    if (intelPcu != null)
+                    {
+                        if (PCUSMBusIndexSelect(intelPcu, 0))
+                        {
+                            var smbus = new SMBusPawnIO(intelPcu, PawnIOSMBusIdentifier.IntelPCU)
+                            {
+                                SMBusIndex = 0
+                            };
+                            SMBusManager.AddSMBus(smbus);
+                        }
+
+                        intelPcu = pawnIO.LoadModule(PawnIOSMBusIdentifier.IntelPCU);
+                        if (intelPcu != null)
+                        {
+                            if (PCUSMBusIndexSelect(intelPcu, 1))
+                            {
+                                var smbus = new SMBusPawnIO(intelPcu, PawnIOSMBusIdentifier.IntelPCU)
+                                {
+                                    SMBusIndex = 1
+                                };
+                                SMBusManager.AddSMBus(smbus);
+                            }
+                        }
+
+                        any = true;
                     }
                 }
             }
 
-            return false;
+            return any;
+        }
+
+        #endregion
+
+        #region Internal
+
+        internal bool SetBank(byte bankIndex)
+        {
+            uint inSize = 1;
+            uint outSize = 1;
+
+            var inBuffer = new long[inSize];
+            var outBuffer = new long[outSize];
+
+            inBuffer[0] = bankIndex;
+
+            return PawnIO.Execute("ioctl_set_bank", inBuffer, inSize, outBuffer, outSize, out var returnSize) == 0;
         }
 
         #endregion
@@ -205,6 +259,19 @@ namespace RAMSPDToolkit.I2CSMBus
             inBuffer[0] = port;
 
             return pawnIO.Execute("ioctl_piix4_port_sel", inBuffer, inSize, outBuffer, outSize, out var returnSize) == 0;
+        }
+
+        static bool PCUSMBusIndexSelect(IPawnIOModule pawnIO, byte smbusIndex)
+        {
+            uint inSize = 1;
+            uint outSize = 1;
+
+            var inBuffer = new long[inSize];
+            var outBuffer = new long[outSize];
+
+            inBuffer[0] = smbusIndex;
+
+            return pawnIO.Execute("ioctl_smbus_index", inBuffer, inSize, outBuffer, outSize, out var returnSize) == 0;
         }
 
         void GetIdentity(IPawnIOModule pawnIO)

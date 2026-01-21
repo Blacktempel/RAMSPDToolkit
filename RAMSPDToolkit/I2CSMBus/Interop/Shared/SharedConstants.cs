@@ -15,6 +15,7 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.Shared
     {
         internal const string SMBusMutexName = "Access_SMBUS.HTP.Method";
 
+        public const int ENOACK     =   4; //No ACK response received
         public const int EIO        =   5; //I/O error
         public const int ENXIO      =   6; //No such device or address
         public const int EBADF      =   9; //Bad file number

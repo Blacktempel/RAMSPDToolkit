@@ -12,6 +12,7 @@
 #if !RELEASE_NDD
 
 using RAMSPDToolkit.I2CSMBus.Interop.PawnIO;
+using RAMSPDToolkit.Logging;
 using RAMSPDToolkit.Windows.Driver.Implementations.PawnIO.Interop;
 using RAMSPDToolkit.Windows.Driver.Interfaces;
 using RAMSPDToolkit.Windows.Utilities;
@@ -98,6 +99,9 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.PawnIO
                 case PawnIOSMBusIdentifier.NCT6793:
                     moduleResourceFilename = PawnIOConstants.NCT6793ModuleFilename;
                     break;
+                case PawnIOSMBusIdentifier.IntelPCU:
+                    moduleResourceFilename = PawnIOConstants.IntelPCUModuleFilename;
+                    break;
                 default:
                     break;
             }
@@ -129,6 +133,8 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.PawnIO
                 fixed (byte* moduleData = bytes)
                 {
                     var returnValue = _PawnIOLib.PawnIOLoad(module._Handle, moduleData, (uint)bytes.Length);
+
+                    LogSimple.LogTrace($"{nameof(PawnIO)}.{nameof(LoadModuleFromResource)} module load '{moduleResourceFilename}' returned '{returnValue}' (0x{returnValue:X8}).");
 
                     return returnValue == 0;
                 }
