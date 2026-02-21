@@ -108,7 +108,7 @@ namespace RAMSPDToolkit.I2CSMBus
                             smbusDetectMethods.Add(WindowsSMBusDetector.DetectSMBuses);
                         }
 
-                        smbusDetectMethods.Add(SMBusPCU    .SMBusDetect);
+                        smbusDetectMethods.Add(SMBusSkylakeIMC    .SMBusDetect);
                         smbusDetectMethods.Add(SMBusNCT6775.SMBusDetect);
                     }
                 }
@@ -119,7 +119,7 @@ namespace RAMSPDToolkit.I2CSMBus
             else if (OS.IsLinux())
             {
                 smbusDetectMethods.Add(SMBusLinux.SMBusDetect);
-                smbusDetectMethods.Add(SMBusPCU  .SMBusDetect);
+                smbusDetectMethods.Add(SMBusSkylakeIMC  .SMBusDetect);
             }
 
             LogSimple.LogTrace($"Detecting SMBuses - amount of available detection methods are {smbusDetectMethods.Count}.");

@@ -91,8 +91,8 @@ namespace ConsoleOutputTest
                         linux.CheckFuncs();
                     }
 
-                    if (bus is SMBusPCU
-                     || (bus is SMBusPawnIO p && p.PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelPCU))
+                    if (bus is SMBusSkylakeIMC
+                     || (bus is SMBusPawnIO p && p.PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelSkylakeIMC))
                     { }
                     else
                     {
@@ -156,11 +156,11 @@ namespace ConsoleOutputTest
             }
 
             var slot = (byte)(i - SPDConstants.SPD_BEGIN);
-            if (DDR4AccessorPCU.IsAvailable(bus, slot))
+            if (DDR4AccessorIMC.IsAvailable(bus, slot))
             {
-                Log($"{nameof(DDR4AccessorPCU)} available at {slot}.");
+                Log($"{nameof(DDR4AccessorIMC)} available at {slot}.");
 
-                TryReadSPDData<DDR4AccessorPCU>(bus, slot);
+                TryReadSPDData<DDR4AccessorIMC>(bus, slot);
             }
         }
 

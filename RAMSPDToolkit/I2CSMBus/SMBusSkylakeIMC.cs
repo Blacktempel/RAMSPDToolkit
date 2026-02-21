@@ -27,13 +27,13 @@ using OS = BlackSharp.Core.Platform.OperatingSystem;
 namespace RAMSPDToolkit.I2CSMBus
 {
     /// <summary>
-    /// SMBus class for Intel PCU SMBus controllers.
+    /// SMBus class for Intel Skylake IMC SMBus controllers.
     /// </summary>
-    public class SMBusPCU : SMBusInterface, IIntelPCUSMBus
+    public class SMBusSkylakeIMC : SMBusInterface, IIntelSkylakeIMCSMBus
     {
         #region Constructor
 
-        SMBusPCU(uint pciAddress, byte smbusIndex)
+        SMBusSkylakeIMC(uint pciAddress, byte smbusIndex)
         {
             _PCIAddress = pciAddress;
             SMBusIndex = smbusIndex;
@@ -51,9 +51,9 @@ namespace RAMSPDToolkit.I2CSMBus
 
         public byte SMBusIndex { get; }
 
-        uint CmdReg => (uint)(PCUConstants.CmdBase + SMBusIndex * PCUConstants.RegStep);
-        uint StsReg => (uint)(PCUConstants.StsBase + SMBusIndex * PCUConstants.RegStep);
-        uint DatReg => (uint)(PCUConstants.DatBase + SMBusIndex * PCUConstants.RegStep);
+        uint CmdReg => (uint)(IMCConstants.CmdBase + SMBusIndex * IMCConstants.RegStep);
+        uint StsReg => (uint)(IMCConstants.StsBase + SMBusIndex * IMCConstants.RegStep);
+        uint DatReg => (uint)(IMCConstants.DatBase + SMBusIndex * IMCConstants.RegStep);
 
         #endregion
 
@@ -71,12 +71,12 @@ namespace RAMSPDToolkit.I2CSMBus
                 //Lock SMBus mutex
                 using (var pci = new WorldMutexGuard(WorldMutexManager.WorldSMBusMutex))
                 {
-                    result = pcuAccess(addr, read_write, command, size, data);
+                    result = imcAccess(addr, read_write, command, size, data);
                 }
             }
             else if (OS.IsLinux())
             {
-                result = pcuAccess(addr, read_write, command, size, data);
+                result = imcAccess(addr, read_write, command, size, data);
             }
             else
             {
@@ -99,12 +99,12 @@ namespace RAMSPDToolkit.I2CSMBus
         {
             if (!bankIndex.Between(0, 1))
             {
-                LogSimple.LogWarn($"{nameof(SMBusPCU)}.{nameof(SetBank)}: Index not in range '{bankIndex}'.");
+                LogSimple.LogWarn($"{nameof(SMBusSkylakeIMC)}.{nameof(SetBank)}: Index not in range '{bankIndex}'.");
 
                 return false;
             }
 
-            for (int i = 0; i < PCUConstants.StartRetries; ++i)
+            for (int i = 0; i < IMCConstants.StartRetries; ++i)
             {
                 if (!WaitReady())
                 {
@@ -114,21 +114,21 @@ namespace RAMSPDToolkit.I2CSMBus
                 uint oldCommand = 0;
                 ReadPciConfigDwordEx(_PCIAddress, CmdReg, ref oldCommand);
 
-                var bankIndexMask = bankIndex == 0 ? PCUConstants.Bank0Mask : PCUConstants.Bank1Mask;
-                uint cmd = (oldCommand & PCUConstants.CmdMaskKeep)
-                         | PCUConstants.BankMask
+                var bankIndexMask = bankIndex == 0 ? IMCConstants.Bank0Mask : IMCConstants.Bank1Mask;
+                uint cmd = (oldCommand & IMCConstants.CmdMaskKeep)
+                         | IMCConstants.BankMask
                          | bankIndexMask
-                         | PCUConstants.GoBit;
+                         | IMCConstants.GoBit;
 
                 WritePciConfigDwordEx(_PCIAddress, CmdReg, cmd);
-                Thread.Sleep(PCUConstants.CmdDelayMs);
+                Thread.Sleep(IMCConstants.CmdDelayMs);
 
                 if (WaitDone(out _))
                 {
                     return true;
                 }
 
-                Thread.Sleep(PCUConstants.CmdDelayMs);
+                Thread.Sleep(IMCConstants.CmdDelayMs);
             }
 
             return false;
@@ -136,7 +136,7 @@ namespace RAMSPDToolkit.I2CSMBus
 
         public static bool SMBusDetect()
         {
-            //Intel PCU SMBus Device IDs range from 0x2080 to 0x208E
+            //Intel IMC SMBus Device IDs range from 0x2080 to 0x208E
             for (ushort i = 0x2080; i < 0x208F; ++i)
             {
                 //Hard filter for known Device ID
@@ -151,11 +151,11 @@ namespace RAMSPDToolkit.I2CSMBus
                 if (pciAddress != 0 && pciAddress != PCIConstants.PCI_DEVICE_INVALID)
                 {
                     //Check for each possible SMBus controller
-                    for (byte smbusIndex = 0; smbusIndex < PCUConstants.MaxSMBusControllers; ++smbusIndex)
+                    for (byte smbusIndex = 0; smbusIndex < IMCConstants.MaxSMBusControllers; ++smbusIndex)
                     {
-                        uint cmdOff = (uint)(PCUConstants.CmdBase + smbusIndex * PCUConstants.RegStep);
-                        uint stsOff = (uint)(PCUConstants.StsBase + smbusIndex * PCUConstants.RegStep);
-                        uint datOff = (uint)(PCUConstants.DatBase + smbusIndex * PCUConstants.RegStep);
+                        uint cmdOff = (uint)(IMCConstants.CmdBase + smbusIndex * IMCConstants.RegStep);
+                        uint stsOff = (uint)(IMCConstants.StsBase + smbusIndex * IMCConstants.RegStep);
+                        uint datOff = (uint)(IMCConstants.DatBase + smbusIndex * IMCConstants.RegStep);
 
                         uint cmd = 0;
                         uint sts = 0;
@@ -180,10 +180,10 @@ namespace RAMSPDToolkit.I2CSMBus
                             continue;
                         }
 
-                        LogSimple.LogTrace($"{nameof(SMBusPCU)}.{nameof(SMBusDetect)}: Detected at PCI Device ID 0x{i:X4}, SMBus Index {smbusIndex}.");
+                        LogSimple.LogTrace($"{nameof(SMBusSkylakeIMC)}.{nameof(SMBusDetect)}: Detected at PCI Device ID 0x{i:X4}, SMBus Index {smbusIndex}.");
 
                         //Create SMBus
-                        var smbus = new SMBusPCU(pciAddress, smbusIndex)
+                        var smbus = new SMBusSkylakeIMC(pciAddress, smbusIndex)
                         {
                             PortID = smbusIndex,
                             PCIVendor = PCIConstants.PCI_VENDOR_INTEL,
@@ -311,7 +311,7 @@ namespace RAMSPDToolkit.I2CSMBus
             }
         }
 
-        int pcuAccess(byte offset, byte read_write, byte opcodeAndSlot, int size, SMBusData data)
+        int imcAccess(byte offset, byte read_write, byte opcodeAndSlot, int size, SMBusData data)
         {
             if (!size.AnyOf(I2CConstants.I2C_SMBUS_BYTE_DATA, I2CConstants.I2C_SMBUS_WORD_DATA))
             {
@@ -323,12 +323,12 @@ namespace RAMSPDToolkit.I2CSMBus
                 return -SharedConstants.ENOTSUP;
             }
 
-            var decoded = PCUUtilities.Decode(opcodeAndSlot);
+            var decoded = IMCUtilities.Decode(opcodeAndSlot);
 
             var opcode = decoded.Opcode;
             var slot = decoded.Slot;
 
-            for (int i = 0; i < PCUConstants.StartRetries; ++i)
+            for (int i = 0; i < IMCConstants.StartRetries; ++i)
             {
                 if (!WaitReady())
                 {
@@ -338,20 +338,20 @@ namespace RAMSPDToolkit.I2CSMBus
                 uint oldCommand = 0;
                 ReadPciConfigDwordEx(_PCIAddress, CmdReg, ref oldCommand);
 
-                uint cmd = (oldCommand & PCUConstants.CmdMaskKeep)
-                         | ((uint)(opcode & 0xF) << PCUConstants.OpShift)
-                         | ((uint)(slot & 0x7) << PCUConstants.SlotShift)
+                uint cmd = (oldCommand & IMCConstants.CmdMaskKeep)
+                         | ((uint)(opcode & 0xF) << IMCConstants.OpShift)
+                         | ((uint)(slot & 0x7) << IMCConstants.SlotShift)
                          | offset;
 
                 if (size == I2CConstants.I2C_SMBUS_WORD_DATA)
                 {
-                    cmd |= PCUConstants.WordBit;
+                    cmd |= IMCConstants.WordBit;
                 }
 
-                cmd |= PCUConstants.GoBit;
+                cmd |= IMCConstants.GoBit;
 
                 WritePciConfigDwordEx(_PCIAddress, CmdReg, cmd);
-                Thread.Sleep(PCUConstants.CmdDelayMs);
+                Thread.Sleep(IMCConstants.CmdDelayMs);
 
                 if (WaitDone(out _))
                 {
@@ -370,7 +370,7 @@ namespace RAMSPDToolkit.I2CSMBus
                     }
                 }
 
-                Thread.Sleep(PCUConstants.CmdDelayMs);
+                Thread.Sleep(IMCConstants.CmdDelayMs);
             }
 
             return -SharedConstants.EOPNOTSUPP;
@@ -385,17 +385,17 @@ namespace RAMSPDToolkit.I2CSMBus
                 uint status = 0;
                 ReadPciConfigDwordEx(_PCIAddress, StsReg, ref status);
 
-                if ((status & PCUConstants.StsBusy) == 0)
+                if ((status & IMCConstants.StsBusy) == 0)
                 {
                     return true;
                 }
 
-                if (sw.ElapsedMilliseconds > PCUConstants.PollTimeoutMs)
+                if (sw.ElapsedMilliseconds > IMCConstants.PollTimeoutMs)
                 {
                     return false;
                 }
 
-                Thread.Sleep(PCUConstants.PollSleepMs);
+                Thread.Sleep(IMCConstants.PollSleepMs);
             }
         }
 
@@ -408,9 +408,9 @@ namespace RAMSPDToolkit.I2CSMBus
                 lastStatus = 0;
                 ReadPciConfigDwordEx(_PCIAddress, StsReg, ref lastStatus);
 
-                if ((lastStatus & PCUConstants.StsBusy) == 0)
+                if ((lastStatus & IMCConstants.StsBusy) == 0)
                 {
-                    if ((lastStatus & PCUConstants.StsError) != 0)
+                    if ((lastStatus & IMCConstants.StsError) != 0)
                     {
                         return false;
                     }
@@ -418,12 +418,12 @@ namespace RAMSPDToolkit.I2CSMBus
                     return true;
                 }
 
-                if (sw.ElapsedMilliseconds > PCUConstants.PollTimeoutMs)
+                if (sw.ElapsedMilliseconds > IMCConstants.PollTimeoutMs)
                 {
                     return false;
                 }
 
-                Thread.Sleep(PCUConstants.PollSleepMs);
+                Thread.Sleep(IMCConstants.PollSleepMs);
             }
         }
 

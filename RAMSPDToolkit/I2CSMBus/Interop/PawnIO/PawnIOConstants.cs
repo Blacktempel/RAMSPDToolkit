@@ -16,6 +16,6 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.PawnIO
         public const string I801ModuleFilename     = "SmbusI801.gz";
         public const string Piix4ModuleFilename    = "SmbusPIIX4.gz";
         public const string NCT6793ModuleFilename  = "SmbusNCT6793.gz";
-        public const string IntelPCUModuleFilename = "SmbusIntelPCU.gz";
+        public const string IntelIMCModuleFilename = "SmbusIntelSkylakeIMC.gz";
     }
 }

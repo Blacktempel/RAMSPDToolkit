@@ -13,9 +13,9 @@ using RAMSPDToolkit.SPD.Interop;
 
 namespace RAMSPDToolkit.I2CSMBus.Interop.Intel
 {
-    internal static class PCUConstants
+    internal static class IMCConstants
     {
-        //PCU SMBus Register Layout (offsets from PCI config space of PCU / SMBus device)
+        //IMC SMBus Register Layout (offsets from PCI config space of IMC / SMBus device)
         public const int RegStep = 0x04;
         public const int CmdBase = 0x9C; //Command = CmdBase + idx * 4
         public const int StsBase = 0xA8; //Status  = StsBase + idx * 4

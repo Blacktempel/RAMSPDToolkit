@@ -13,7 +13,7 @@ using RAMSPDToolkit.Logging;
 
 namespace RAMSPDToolkit.I2CSMBus.Interop.Intel
 {
-    internal static class PCUUtilities
+    internal static class IMCUtilities
     {
         #region Public
 
@@ -21,13 +21,13 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.Intel
         {
             if (opcode >= 0xF)
             {
-                LogSimple.LogWarn($"{nameof(PCUUtilities)}: {nameof(opcode)} value too high ({opcode}).");
+                LogSimple.LogWarn($"{nameof(IMCUtilities)}: {nameof(opcode)} value too high ({opcode}).");
                 return 0;
             }
 
             if (slot >= 0xF)
             {
-                LogSimple.LogWarn($"{nameof(PCUUtilities)}: {nameof(slot)} value too high ({slot}).");
+                LogSimple.LogWarn($"{nameof(IMCUtilities)}: {nameof(slot)} value too high ({slot}).");
                 return 0;
             }
 

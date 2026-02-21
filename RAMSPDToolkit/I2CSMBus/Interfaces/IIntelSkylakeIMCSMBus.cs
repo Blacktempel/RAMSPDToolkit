@@ -11,7 +11,7 @@
 
 namespace RAMSPDToolkit.I2CSMBus.Interfaces
 {
-    internal interface IIntelPCUSMBus
+    internal interface IIntelSkylakeIMCSMBus
     {
         byte SMBusIndex { get; }
     }

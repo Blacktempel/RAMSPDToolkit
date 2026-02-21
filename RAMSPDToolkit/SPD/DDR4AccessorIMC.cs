@@ -25,20 +25,20 @@ using RAMSPDToolkit.Utilities;
 namespace RAMSPDToolkit.SPD
 {
     /// <summary>
-    /// Accessor for DDR4 SPD via PCU.<br/>
+    /// Accessor for DDR4 SPD via IMC.<br/>
     /// This works for Windows and Linux.
     /// </summary>
     /// <remarks>Please refer to JEDEC Standard for EE1004 and TSE2004av for property definitions.</remarks>
-    public sealed class DDR4AccessorPCU : DDR4AccessorBase, IThermalDataDDR4
+    public sealed class DDR4AccessorIMC : DDR4AccessorBase, IThermalDataDDR4
     {
         #region Constructor
 
-        public DDR4AccessorPCU(SMBusInterface bus, byte slot)
-            : base(bus, (byte)(((bus as IIntelPCUSMBus).SMBusIndex * 4) + slot))
+        public DDR4AccessorIMC(SMBusInterface bus, byte slot)
+            : base(bus, (byte)(((bus as IIntelSkylakeIMCSMBus).SMBusIndex * 4) + slot))
         {
             _Slot = slot;
-            _SPDEncoded = PCUUtilities.Encode(SPDOpcode, _Slot);
-            _ThermalEncoded = PCUUtilities.Encode(ThermalSensorOpcode, _Slot);
+            _SPDEncoded = IMCUtilities.Encode(SPDOpcode, _Slot);
+            _ThermalEncoded = IMCUtilities.Encode(ThermalSensorOpcode, _Slot);
 
             //Check for thermal sensor
             HasThermalSensor = ProbeThermalSensor();
@@ -87,22 +87,22 @@ namespace RAMSPDToolkit.SPD
 
         public static bool IsAvailable(SMBusInterface bus, byte slot)
         {
-            if (bus is SMBusPCU
-             || (bus is SMBusPawnIO p && p.PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelPCU))
+            if (bus is SMBusSkylakeIMC
+             || (bus is SMBusPawnIO p && p.PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelSkylakeIMC))
             { }
             else
             {
                 return false;
             }
 
-            var spdEncoded = PCUUtilities.Encode(SPDOpcode, slot);
+            var spdEncoded = IMCUtilities.Encode(SPDOpcode, slot);
 
             //Read memory type
             var status = bus.i2c_smbus_read_byte_data(DDR4Constants.SPD_DDR4_MODULE_MEMORY_TYPE, spdEncoded);
 
             if (status < 0)
             {
-                LogSimple.LogTrace($"{nameof(DDR4AccessorPCU)}.{nameof(IsAvailable)} failed to read memory type due to error {status}.");
+                LogSimple.LogTrace($"{nameof(DDR4AccessorIMC)}.{nameof(IsAvailable)} failed to read memory type due to error {status}.");
 
                 return false;
             }
@@ -127,7 +127,7 @@ namespace RAMSPDToolkit.SPD
             }
 
             //Switch to the page containing address
-            if (address < PCUConstants.PageSize)
+            if (address < IMCConstants.PageSize)
             {
                 SetPage(0);
             }
@@ -136,7 +136,7 @@ namespace RAMSPDToolkit.SPD
                 SetPage(1);
 
                 //Adjust address to be within page
-                address -= PCUConstants.PageSize;
+                address -= IMCConstants.PageSize;
             }
 
             //Read value
@@ -169,14 +169,14 @@ namespace RAMSPDToolkit.SPD
 
         protected override void SetPage(byte page)
         {
-            if (_Bus is SMBusPCU pcu)
+            if (_Bus is SMBusSkylakeIMC imc)
             {
-                pcu.SetBank(page);
+                imc.SetBank(page);
             }
-            else if (_Bus is SMBusPawnIO pcuPawnIO
-                  && pcuPawnIO.PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelPCU)
+            else if (_Bus is SMBusPawnIO imcPawnIO
+                  && imcPawnIO.PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelSkylakeIMC)
             {
-                pcuPawnIO.SetBank(page);
+                imcPawnIO.SetBank(page);
             }
         }
 
@@ -197,12 +197,12 @@ namespace RAMSPDToolkit.SPD
                 //Check if thermal sensor bit is set
                 if (BitHandler.IsBitSet((byte)status, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_BIT))
                 {
-                    LogSimple.LogTrace($"{nameof(DDR4AccessorPCU)} ({Index}) has {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_BIT)} set.");
+                    LogSimple.LogTrace($"{nameof(DDR4AccessorIMC)} ({Index}) has {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_BIT)} set.");
                     return true;
                 }
                 else
                 {
-                    LogSimple.LogTrace($"{nameof(DDR4AccessorPCU)} ({Index}) does not have {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_BIT)} set.");
+                    LogSimple.LogTrace($"{nameof(DDR4AccessorIMC)} ({Index}) does not have {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_BIT)} set.");
                     LogSimple.LogTrace($"Checking another way if thermal sensor is present.");
 
                     //Do a read to the thermal sensors address to check if it is available
@@ -210,12 +210,12 @@ namespace RAMSPDToolkit.SPD
 
                     if (status < 0)
                     {
-                        LogSimple.LogTrace($"{nameof(DDR4AccessorPCU)} ({Index}) Thermal sensor not found.");
+                        LogSimple.LogTrace($"{nameof(DDR4AccessorIMC)} ({Index}) Thermal sensor not found.");
                     }
                     else
                     {
                         //If there is an ACK to the quick read, there is an "unregistered" thermal sensor
-                        LogSimple.LogTrace($"{nameof(DDR4AccessorPCU)} ({Index}) Unregistered thermal sensor found.");
+                        LogSimple.LogTrace($"{nameof(DDR4AccessorIMC)} ({Index}) Unregistered thermal sensor found.");
 
                         return true;
                     }

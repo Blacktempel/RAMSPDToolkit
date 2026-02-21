@@ -26,9 +26,9 @@ namespace RAMSPDToolkit.I2CSMBus
 {
     /// <summary>
     /// SMBus class for <see cref="IPawnIODriver"/> driver.<br/>
-    /// Supports I801, Piix4, NCT6793 and Intel PCU.
+    /// Supports I801, Piix4, NCT6793 and Intel Skylake IMC.
     /// </summary>
-    public sealed class SMBusPawnIO : SMBusInterface, IIntelPCUSMBus
+    public sealed class SMBusPawnIO : SMBusInterface, IIntelSkylakeIMCSMBus
     {
         #region Constructor
 
@@ -61,7 +61,7 @@ namespace RAMSPDToolkit.I2CSMBus
         public PawnIOSMBusIdentifier PawnIOSMBusIdentifier { get; private set; }
 
         /// <summary>
-        /// Only valid if <see cref="PawnIOSMBusIdentifier"/> is set to <see cref="PawnIOSMBusIdentifier.IntelPCU"/>.
+        /// Only valid if <see cref="PawnIOSMBusIdentifier"/> is set to <see cref="PawnIOSMBusIdentifier.IntelSkylakeIMC"/>.
         /// </summary>
         public byte SMBusIndex { get; internal set; } = byte.MaxValue;
 
@@ -193,25 +193,25 @@ namespace RAMSPDToolkit.I2CSMBus
                         any = true;
                     }
 
-                    //Intel PCU
-                    var intelPcu = pawnIO.LoadModule(PawnIOSMBusIdentifier.IntelPCU);
-                    if (intelPcu != null)
+                    //Intel Skylake IMC
+                    var intelSkylakeIMC = pawnIO.LoadModule(PawnIOSMBusIdentifier.IntelSkylakeIMC);
+                    if (intelSkylakeIMC != null)
                     {
-                        if (PCUSMBusIndexSelect(intelPcu, 0))
+                        if (IMCSMBusIndexSelect(intelSkylakeIMC, 0))
                         {
-                            var smbus = new SMBusPawnIO(intelPcu, PawnIOSMBusIdentifier.IntelPCU)
+                            var smbus = new SMBusPawnIO(intelSkylakeIMC, PawnIOSMBusIdentifier.IntelSkylakeIMC)
                             {
                                 SMBusIndex = 0
                             };
                             SMBusManager.AddSMBus(smbus);
                         }
 
-                        intelPcu = pawnIO.LoadModule(PawnIOSMBusIdentifier.IntelPCU);
-                        if (intelPcu != null)
+                        intelSkylakeIMC = pawnIO.LoadModule(PawnIOSMBusIdentifier.IntelSkylakeIMC);
+                        if (intelSkylakeIMC != null)
                         {
-                            if (PCUSMBusIndexSelect(intelPcu, 1))
+                            if (IMCSMBusIndexSelect(intelSkylakeIMC, 1))
                             {
-                                var smbus = new SMBusPawnIO(intelPcu, PawnIOSMBusIdentifier.IntelPCU)
+                                var smbus = new SMBusPawnIO(intelSkylakeIMC, PawnIOSMBusIdentifier.IntelSkylakeIMC)
                                 {
                                     SMBusIndex = 1
                                 };
@@ -261,7 +261,7 @@ namespace RAMSPDToolkit.I2CSMBus
             return pawnIO.Execute("ioctl_piix4_port_sel", inBuffer, inSize, outBuffer, outSize, out var returnSize) == 0;
         }
 
-        static bool PCUSMBusIndexSelect(IPawnIOModule pawnIO, byte smbusIndex)
+        static bool IMCSMBusIndexSelect(IPawnIOModule pawnIO, byte smbusIndex)
         {
             uint inSize = 1;
             uint outSize = 1;

@@ -99,8 +99,8 @@ namespace RAMSPDToolkit.Windows.Driver.Implementations.PawnIO
                 case PawnIOSMBusIdentifier.NCT6793:
                     moduleResourceFilename = PawnIOConstants.NCT6793ModuleFilename;
                     break;
-                case PawnIOSMBusIdentifier.IntelPCU:
-                    moduleResourceFilename = PawnIOConstants.IntelPCUModuleFilename;
+                case PawnIOSMBusIdentifier.IntelSkylakeIMC:
+                    moduleResourceFilename = PawnIOConstants.IntelIMCModuleFilename;
                     break;
                 default:
                     break;
