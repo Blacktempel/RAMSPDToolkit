@@ -115,6 +115,7 @@
     <None Remove="Resources\SmbusI801.gz" />
     <None Remove="Resources\SmbusNCT6793.gz" />
     <None Remove="Resources\SmbusPIIX4.gz" />
+    <None Remove="Resources\SmbusIntelSkylakeIMC.gz" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' != 'Release_NDD'">
@@ -125,6 +126,7 @@
     <EmbeddedResource Include="Resources\SmbusI801.gz" />
     <EmbeddedResource Include="Resources\SmbusNCT6793.gz" />
     <EmbeddedResource Include="Resources\SmbusPIIX4.gz" />
+    <EmbeddedResource Include="Resources\SmbusIntelSkylakeIMC.gz" />
   </ItemGroup>
 
   <ItemGroup>
