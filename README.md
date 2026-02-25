@@ -54,7 +54,8 @@ static class Program
         if (OperatingSystem.IsWindows())
         {
             //Load driver
-            if (DriverManager.LoadDriver(DriverImplementation.WinRing0))
+            if (DriverManager.LoadDriver(DriverImplementation.WinRing0)) //use WinRing0 driver
+            //if (DriverManager.LoadDriver(DriverImplementation.PawnIO)) //use PawnIO driver
             {
                 Console.WriteLine($"***** Driver {DriverManager.DriverImplementation} is open. *****");
             }
