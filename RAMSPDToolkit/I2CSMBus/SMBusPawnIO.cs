@@ -110,6 +110,12 @@ namespace RAMSPDToolkit.I2CSMBus
                 throw new NullReferenceException($"{nameof(PawnIO)} was not initialized.");
             }
 
+            if (PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelSkylakeIMC)
+            {
+                inSize = 4;
+                outSize = 1;
+            }
+
             int status;
 
             using (var guard = new WorldMutexGuard(WorldMutexManager.WorldSMBusMutex))
