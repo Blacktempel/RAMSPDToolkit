@@ -378,9 +378,7 @@ namespace RAMSPDToolkit.I2CSMBus
 
         bool WaitReady()
         {
-            var sw = Stopwatch.StartNew();
-
-            while (true)
+            for (int i = 0; i < IMCConstants.PollTimeoutMs; ++i)
             {
                 uint status = 0;
                 ReadPciConfigDwordEx(_PCIAddress, StsReg, ref status);
@@ -390,20 +388,16 @@ namespace RAMSPDToolkit.I2CSMBus
                     return true;
                 }
 
-                if (sw.ElapsedMilliseconds > IMCConstants.PollTimeoutMs)
-                {
-                    return false;
-                }
-
                 Thread.Sleep(IMCConstants.PollSleepMs);
             }
+
+            //Timeout
+            return false;
         }
 
         bool WaitDone(out uint lastStatus)
         {
-            var sw = Stopwatch.StartNew();
-
-            while (true)
+            for (int i = 0; i < IMCConstants.PollTimeoutMs; ++i)
             {
                 lastStatus = 0;
                 ReadPciConfigDwordEx(_PCIAddress, StsReg, ref lastStatus);
@@ -418,13 +412,13 @@ namespace RAMSPDToolkit.I2CSMBus
                     return true;
                 }
 
-                if (sw.ElapsedMilliseconds > IMCConstants.PollTimeoutMs)
-                {
-                    return false;
-                }
-
                 Thread.Sleep(IMCConstants.PollSleepMs);
             }
+
+            lastStatus = 0;
+
+            //Timeout
+            return false;
         }
 
         #endregion
