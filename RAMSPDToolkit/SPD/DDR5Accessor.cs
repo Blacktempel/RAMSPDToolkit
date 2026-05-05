@@ -194,6 +194,29 @@ namespace RAMSPDToolkit.SPD
             return value;
         }
 
+        public override byte[] At(ushort address, byte length)
+        {
+            //Ensure address is valid
+            if (address >= DDR5Constants.SPD_DDR5_EEPROM_LENGTH)
+            {
+                return [];
+            }
+
+            //Switch to the page containing address
+            SetPage((byte)(address >> DDR5Constants.SPD_DDR5_EEPROM_PAGE_SHIFT));
+
+            //Calculate offset
+            byte offset = (byte)((address & DDR5Constants.SPD_DDR5_EEPROM_PAGE_MASK) | 0x80);
+
+            //Read values at address
+            RetryReadI2CBlockData(_Bus, _Address, offset, length, SPDConstants.SPD_DATA_RETRIES, out var value);
+
+            Thread.Sleep(SPDConstants.SPD_IO_DELAY);
+
+            //Return value
+            return value;
+        }
+
         public override bool UpdateTemperature()
         {
             //Cannot read data if sensor is disabled

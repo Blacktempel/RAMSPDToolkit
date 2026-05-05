@@ -132,11 +132,11 @@ namespace RAMSPDToolkit.SPD
         {
             var sb = new StringBuilder();
 
-            for (ushort i = DDR4Constants.SPD_DDR4_MODULE_SERIAL_NUMBER_BEGIN; i < DDR4Constants.SPD_DDR4_MODULE_SERIAL_NUMBER_END; ++i)
-            {
-                var c = At(i);
+            var serialNumberBytes = At(DDR4Constants.SPD_DDR4_MODULE_SERIAL_NUMBER_BEGIN, (byte)(DDR4Constants.SPD_DDR4_MODULE_SERIAL_NUMBER_END - DDR4Constants.SPD_DDR4_MODULE_SERIAL_NUMBER_BEGIN));
 
-                sb.Append(c);
+            foreach (var b in serialNumberBytes)
+            {
+                sb.Append($"{b:X2}");
             }
 
             return sb.ToString();
@@ -144,23 +144,14 @@ namespace RAMSPDToolkit.SPD
 
         public override string ModulePartNumber()
         {
-            var sb = new StringBuilder();
+            var partNumberBytes = At(DDR4Constants.SPD_DDR4_MODULE_PART_NUMBER_BEGIN, (byte)(DDR4Constants.SPD_DDR4_MODULE_PART_NUMBER_END - DDR4Constants.SPD_DDR4_MODULE_PART_NUMBER_BEGIN));
 
-            for (ushort i = DDR4Constants.SPD_DDR4_MODULE_PART_NUMBER_BEGIN; i < DDR4Constants.SPD_DDR4_MODULE_PART_NUMBER_END; ++i)
-            {
-                var c = At(i);
-                var s = Encoding.ASCII.GetString(new[] { c });
-
-                if (c == DDR4Constants.SPD_DDR4_MODULE_PART_NUMBER_UNUSED)
-                {
-                    continue;
-                }
-
-                sb.Append(s);
-            }
+            var validBytes = partNumberBytes
+                .Where(b => b != DDR4Constants.SPD_DDR4_MODULE_PART_NUMBER_UNUSED)
+                .ToArray();
 
             //Some manufacturers include characters like '\0'
-            return sb.ToString().Trim('\0');
+            return Encoding.ASCII.GetString(validBytes).Trim('\0');
         }
 
         public override byte ModuleRevisionCode()

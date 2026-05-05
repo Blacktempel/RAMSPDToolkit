@@ -179,6 +179,36 @@ namespace RAMSPDToolkit.SPD
             return status;
         }
 
+        protected static int RetryReadI2CBlockData(SMBusInterface bus, byte address, byte what, byte length, int retries, out byte[] bytes)
+        {
+            bytes = new byte[length];
+
+            var status = bus.i2c_smbus_read_block_data_compat(address, what, length, bytes);
+
+            if (status < 0 && retries > 0)
+            {
+                var statusAbs = Math.Abs(status);
+
+                //Try again specified number of times and give up
+                if (statusAbs == SharedConstants.EBUSY ||
+                    statusAbs == SharedConstants.ETIMEDOUT ||
+                    statusAbs == SharedConstants.S_TIMEOUT)
+                {
+                    int MAX_RETRIES = retries;
+                    int retry = MAX_RETRIES;
+
+                    while (status < 0 && retry-- > 0)
+                    {
+                        Thread.Sleep(SPDConstants.SPD_IO_DELAY);
+
+                        status = bus.i2c_smbus_read_block_data_compat(address, what, length, bytes);
+                    }
+                }
+            }
+
+            return status;
+        }
+
         #endregion
 
         #region Abstract
@@ -340,6 +370,24 @@ namespace RAMSPDToolkit.SPD
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Get multiple bytes from specified address.
+        /// </summary>
+        /// <param name="address">Address to read from.</param>
+        /// <param name="length">Number of bytes to read.</param>
+        /// <returns>Read bytes.</returns>
+        public virtual byte[] At(ushort address, byte length)
+        {
+            var result = new byte[length];
+
+            for (byte i = 0; i < length; i++)
+            {
+                result[i] = At((ushort)(address + i));
+            }
+
+            return result;
         }
 
         #endregion

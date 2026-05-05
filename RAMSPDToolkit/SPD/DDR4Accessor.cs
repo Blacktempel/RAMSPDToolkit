@@ -159,6 +159,29 @@ namespace RAMSPDToolkit.SPD
             return value;
         }
 
+        public override byte[] At(ushort address, byte length)
+        {
+            //Ensure address is valid
+            if (address >= DDR4Constants.SPD_DDR4_EEPROM_LENGTH)
+            {
+                return [];
+            }
+
+            //Switch to the page containing address
+            SetPage((byte)(address >> DDR4Constants.SPD_DDR4_EEPROM_PAGE_SHIFT));
+
+            //Calculate offset
+            byte offset = (byte)(address & DDR4Constants.SPD_DDR4_EEPROM_PAGE_MASK);
+
+            //Read values at address
+            RetryReadI2CBlockData(_Bus, _Address, offset, length, SPDConstants.SPD_DATA_RETRIES, out var value);
+
+            Thread.Sleep(SPDConstants.SPD_IO_DELAY);
+
+            //Return value
+            return value;
+        }
+
         public override bool UpdateTemperature()
         {
             //Set page to 0 to read volatile data

@@ -357,6 +357,21 @@ namespace RAMSPDToolkit.I2CSMBus
         //Additional Methods for pure I2C block operations
         //These may not be supported on all devices
 
+        /// <summary>
+        /// Reads block data at given address with specified command, using the protocol supported by this SMBus implementation.<br/>
+        /// Default implementation uses <see cref="I2CConstants.I2C_SMBUS_I2C_BLOCK_DATA"/> (suitable for Intel I801).<br/>
+        /// Override to use <see cref="I2CConstants.I2C_SMBUS_BLOCK_DATA"/> for controllers that require it (e.g. AMD Piix4).
+        /// </summary>
+        /// <param name="addr">Address to read from.</param>
+        /// <param name="command">Command for operation. This is usually an offset value.</param>
+        /// <param name="length">Length of data to be read.</param>
+        /// <param name="values">Input buffer in which the read data will be copied into.</param>
+        /// <returns>When the return value is negative, it is an error code. If positive, the value returned by SMBus call.</returns>
+        public virtual int i2c_smbus_read_block_data_compat(byte addr, byte command, byte length, byte[] values)
+        {
+            return i2c_smbus_read_i2c_block_data(addr, command, length, values);
+        }
+
         public int i2c_read_block(byte addr, int? size, byte[] data)
         {
             return i2c_xfer_call(addr, I2CConstants.I2C_SMBUS_READ, size, data);

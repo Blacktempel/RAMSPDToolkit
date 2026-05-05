@@ -155,20 +155,11 @@ namespace RAMSPDToolkit.SPD
         {
             var sb = new StringBuilder();
 
-            for (ushort i = DDR5Constants.SPD_DDR5_MODULE_SERIAL_NUMBER_BEGIN; i < DDR5Constants.SPD_DDR5_MODULE_SERIAL_NUMBER_END; ++i)
+            var serialNumberBytes = At(DDR5Constants.SPD_DDR5_MODULE_SERIAL_NUMBER_BEGIN, DDR5Constants.SPD_DDR5_MODULE_SERIAL_NUMBER_END - DDR5Constants.SPD_DDR5_MODULE_SERIAL_NUMBER_BEGIN + 1);
+
+            foreach (var b in serialNumberBytes)
             {
-                byte c;
-
-                if (i == 0)
-                {
-                    c = At(i, true);
-                }
-                else
-                {
-                    c = At(i, false);
-                }
-
-                sb.Append(c);
+                sb.Append($"{b:X2}");
             }
 
             return sb.ToString();
@@ -176,33 +167,14 @@ namespace RAMSPDToolkit.SPD
 
         public override string ModulePartNumber()
         {
-            var sb = new StringBuilder();
+            var partNumberBytes = At(DDR5Constants.SPD_DDR5_MODULE_PART_NUMBER_BEGIN, DDR5Constants.SPD_DDR5_MODULE_PART_NUMBER_END - DDR5Constants.SPD_DDR5_MODULE_PART_NUMBER_BEGIN + 1);
 
-            for (ushort i = DDR5Constants.SPD_DDR5_MODULE_PART_NUMBER_BEGIN; i < DDR5Constants.SPD_DDR5_MODULE_PART_NUMBER_END; ++i)
-            {
-                byte c;
-
-                if (i == 0)
-                {
-                    c = At(i, true);
-                }
-                else
-                {
-                    c = At(i, false);
-                }
-
-                var s = Encoding.ASCII.GetString(new[] { c });
-
-                if (c == DDR5Constants.SPD_DDR5_MODULE_PART_NUMBER_UNUSED)
-                {
-                    continue;
-                }
-
-                sb.Append(s);
-            }
+            var validBytes = partNumberBytes
+                .Where(b => b != DDR5Constants.SPD_DDR5_MODULE_PART_NUMBER_UNUSED)
+                .ToArray();
 
             //Some manufacturers include (multiple) zero terminators
-            return sb.ToString().Trim('\0');
+            return Encoding.ASCII.GetString(validBytes).Trim('\0');
         }
 
         public override byte ModuleRevisionCode()

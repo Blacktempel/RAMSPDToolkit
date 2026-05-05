@@ -74,6 +74,13 @@ namespace RAMSPDToolkit.I2CSMBus
             uint inSize = 9;
             uint outSize = 5;
 
+            //TODO: changes for X299 have to be properly tested again
+            //Something is still not working properly
+            if (PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelSkylakeIMC)
+            {
+                inSize = 4;
+            }
+
             var inBuffer = new long[inSize];
 
             inBuffer[0] = addr;
@@ -81,13 +88,15 @@ namespace RAMSPDToolkit.I2CSMBus
             inBuffer[2] = command;
             inBuffer[3] = size;
 
+            bool isBlockData = false;
+
             switch (size)
             {
                 case I2CConstants.I2C_SMBUS_BYTE:
                 case I2CConstants.I2C_SMBUS_BYTE_DATA:
                     outSize = 1;
 
-                    if (data != null)
+                    if (data != null && inBuffer.Length >= 5)
                     {
                         inBuffer[4] = data.ByteData;
                     }
@@ -96,11 +105,27 @@ namespace RAMSPDToolkit.I2CSMBus
                 case I2CConstants.I2C_SMBUS_PROC_CALL:
                     outSize = 2;
 
-                    if (data != null)
+                    if (data != null && inBuffer.Length >= 5)
                     {
                         inBuffer[4] = data.Word;
                     }
                     break;
+                case I2CConstants.I2C_SMBUS_I2C_BLOCK_DATA:
+                case I2CConstants.I2C_SMBUS_BLOCK_DATA:
+                    outSize = 5;
+                    isBlockData = true;
+
+                    if (data != null && inBuffer.Length >= 5)
+                    {
+                        // inBuffer[4]: for reads = requested byte count; for writes = packed length + first bytes
+                        inBuffer[4] = data[0];
+                    }
+                    break;
+            }
+
+            if (PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelSkylakeIMC)
+            {
+                outSize = 1;
             }
 
             var outBuffer = new long[outSize];
@@ -108,12 +133,6 @@ namespace RAMSPDToolkit.I2CSMBus
             if (PawnIO == null)
             {
                 throw new NullReferenceException($"{nameof(PawnIO)} was not initialized.");
-            }
-
-            if (PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelSkylakeIMC)
-            {
-                inSize = 4;
-                outSize = 1;
             }
 
             int status;
@@ -125,7 +144,25 @@ namespace RAMSPDToolkit.I2CSMBus
 
             if (data != null)
             {
-                Marshal.Copy(outBuffer, 0, data.Pointer, (int)outSize);
+                if (isBlockData && read_write == I2CConstants.I2C_SMBUS_READ)
+                {
+                    // Pawn returns block data packed: outBuffer[0] = length,
+                    // outBuffer[1..4] = data bytes packed 8 bytes per long (little-endian).
+                    // Unpack into the flat data.Block byte array.
+                    var len = (byte)outBuffer[0];
+                    data[0] = len;
+
+                    for (int i = 0; i < len; i++)
+                    {
+                        int cellIndex = i / 8;
+                        int byteOffset = i % 8;
+                        data[i + 1] = (byte)((outBuffer[1 + cellIndex] >> (byteOffset * 8)) & 0xFF);
+                    }
+                }
+                else if (!isBlockData)
+                {
+                    Marshal.Copy(outBuffer, 0, data.Pointer, (int)outSize);
+                }
             }
 
             return status;
