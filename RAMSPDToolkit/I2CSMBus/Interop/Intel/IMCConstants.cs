@@ -23,27 +23,32 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.Intel
         //public const int TSODBase = 0xC0; //TSOD   = TSODBase + idx * 4 //not used here
 
         //Bits in CMD
-        public const uint GoBit = 0x80000;
-        public const uint WordBit = 0x20000;
-        public const uint PecBit = 0x100000; //Unused here
-        public const uint CmdMaskKeep = 0xFFE00000; //Keep upper bits from old CMD
+        public const uint WordBit           = 0x00020000;
+        public const uint GoBit             = 0x00080000;
+        public const uint TsodActiveBit     = 0x00100000;
+        public const uint CommandToggleBit  = 0x20000000;
+        public const uint CommandKeepMask   = 0xFFEFFFFF;
+        public const uint CommandPrefix     = 0x20080000;
+        public const uint PageCommand       = 0x2008B6;
         public const int SlotShift = 8;
         public const int OpShift = 11;
 
-        public const uint BankMask = 0xB000;
-        public const uint Bank0Mask = 0x600;
-        public const uint Bank1Mask = 0x700;
         public const ushort PageSize = DDR4Constants.SPD_DDR4_EEPROM_LENGTH / 2;
 
         //Status bits
-        public const uint StsBusy = 0x1;
-        public const uint StsError = 0x2;
+        public const uint StsBusy      = 0x1;
+        public const uint StsError     = 0x2;
+        public const uint StsDoneMask  = 0x6;
+        public const uint StsDoneOk    = 0x4;
+        public const uint StsStateMask = 0x7;
 
-        public const int StartRetries = 5;
-        //public const int ByteRetries = 10;
-        public const int CmdDelayMs = 3; //= 5
-        public const int PollSleepMs = 1;
-        public const int PollTimeoutMs = 10; //= 250;
+        public const int StartRetries           = 5;
+        public const int PageStatusRetries      = 9999;
+        public const int PageCommandRetries     = 999;
+        public const int TransferStatusRetries  = 99999;
+        public const int TransferToggleRetries  = 9999;
+
+        public const int AddressSpace8BitSize = 0x100;
 
         public const byte MaxSMBusControllers = 2;
     }

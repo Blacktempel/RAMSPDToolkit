@@ -74,11 +74,9 @@ namespace RAMSPDToolkit.I2CSMBus
             uint inSize = 9;
             uint outSize = 5;
 
-            //TODO: changes for X299 have to be properly tested again
-            //Something is still not working properly
             if (PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelSkylakeIMC)
             {
-                inSize = 4;
+                inSize = 5;
             }
 
             var inBuffer = new long[inSize];
@@ -123,9 +121,19 @@ namespace RAMSPDToolkit.I2CSMBus
                     break;
             }
 
+            var dataCopySize = outSize;
+
             if (PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelSkylakeIMC)
             {
-                outSize = 1;
+                // The Intel IMC Pawn module implements BYTE/WORD/BLOCK via one fixed-size IOCTL.
+                // Keep the real output buffer large enough for block reads, but only copy the
+                // meaningful low cell for BYTE/WORD responses into SMBusData below.
+                outSize = 5;
+
+                if (!isBlockData)
+                {
+                    dataCopySize = 1;
+                }
             }
 
             var outBuffer = new long[outSize];
@@ -161,7 +169,7 @@ namespace RAMSPDToolkit.I2CSMBus
                 }
                 else if (!isBlockData)
                 {
-                    Marshal.Copy(outBuffer, 0, data.Pointer, (int)outSize);
+                    Marshal.Copy(outBuffer, 0, data.Pointer, (int)dataCopySize);
                 }
             }
 
@@ -276,6 +284,16 @@ namespace RAMSPDToolkit.I2CSMBus
 
         internal bool SetBank(byte bankIndex)
         {
+            if (PawnIOSMBusIdentifier != PawnIOSMBusIdentifier.IntelSkylakeIMC)
+            {
+                return false;
+            }
+
+            if (bankIndex > 1)
+            {
+                return false;
+            }
+
             uint inSize = 1;
             uint outSize = 1;
 
@@ -284,7 +302,14 @@ namespace RAMSPDToolkit.I2CSMBus
 
             inBuffer[0] = bankIndex;
 
-            return PawnIO.Execute("ioctl_set_bank", inBuffer, inSize, outBuffer, outSize, out var returnSize) == 0;
+            int status;
+
+            using (var guard = new WorldMutexGuard(WorldMutexManager.WorldSMBusMutex))
+            {
+                status = PawnIO.Execute("ioctl_set_bank", inBuffer, inSize, outBuffer, outSize, out var returnSize);
+            }
+
+            return status == 0;
         }
 
         #endregion
