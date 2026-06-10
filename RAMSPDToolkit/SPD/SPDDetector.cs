@@ -84,8 +84,6 @@ namespace RAMSPDToolkit.SPD
         {
             SPDAccessor accessor = null;
 
-            var imcSlot = (byte)(_Address - SPDConstants.SPD_BEGIN);
-
             if (  ( _MemoryType == SPDMemoryType.SPD_RESERVED
                  || _MemoryType == SPDMemoryType.SPD_DDR4_SDRAM
                  || _MemoryType == SPDMemoryType.SPD_DDR4E_SDRAM
@@ -101,15 +99,6 @@ namespace RAMSPDToolkit.SPD
              && DDR5Accessor.IsAvailable(_Bus, _Address))
             {
                 accessor = new DDR5Accessor(_Bus, _Address);
-            }
-            else if (  (_MemoryType == SPDMemoryType.SPD_RESERVED
-                     || _MemoryType == SPDMemoryType.SPD_DDR4_SDRAM
-                     || _MemoryType == SPDMemoryType.SPD_DDR4E_SDRAM
-                     || _MemoryType == SPDMemoryType.SPD_LPDDR4_SDRAM
-                     || _MemoryType == SPDMemoryType.SPD_LPDDR4X_SDRAM )
-             && DDR4AccessorIMC.IsAvailable(_Bus, imcSlot))
-            {
-                accessor = new DDR4AccessorIMC(_Bus, imcSlot);
             }
             else if (_MemoryType == SPDMemoryType.SPD_RESERVED)
             {

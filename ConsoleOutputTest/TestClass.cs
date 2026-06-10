@@ -154,14 +154,6 @@ namespace ConsoleOutputTest
                 //DDR4 set page address is not within the write protected range, so we can safely ignore that
                 TryReadSPDData<DDR4Accessor>(bus, i);
             }
-
-            var slot = (byte)(i - SPDConstants.SPD_BEGIN);
-            if (DDR4AccessorIMC.IsAvailable(bus, slot))
-            {
-                Log($"{nameof(DDR4AccessorIMC)} available at {slot}.");
-
-                TryReadSPDData<DDR4AccessorIMC>(bus, slot);
-            }
         }
 
         void ManuallyTestForDDR5(SMBusInterface bus, byte i)

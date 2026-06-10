@@ -10,6 +10,7 @@
  */
 
 using RAMSPDToolkit.SPD.Interop;
+using RAMSPDToolkit.SPD.Interop.Shared;
 
 namespace RAMSPDToolkit.I2CSMBus.Interop.Intel
 {
@@ -34,6 +35,16 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.Intel
         public const int OpShift = 11;
 
         public const ushort PageSize = DDR4Constants.SPD_DDR4_EEPROM_LENGTH / 2;
+
+        public const byte DDR4PageAddress0 = DDR4Constants.SPD_DDR4_ADDRESS_PAGE;
+        public const byte DDR4PageAddress1 = DDR4Constants.SPD_DDR4_ADDRESS_PAGE + 1;
+        public const byte DDR4ThermalSensorBegin = 0x18;
+        public const byte DDR4ThermalSensorEnd = 0x1F;
+
+        public const byte SPDAddressBegin = SPDConstants.SPD_BEGIN;
+        public const byte SPDAddressEnd = SPDConstants.SPD_END;
+        public const byte SPDOpcode = 0x0A;
+        public const byte ThermalSensorOpcode = 0x03;
 
         //Status bits
         public const uint StsBusy      = 0x1;

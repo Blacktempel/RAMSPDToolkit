@@ -294,6 +294,21 @@ namespace RAMSPDToolkit.I2CSMBus
 
         int I2CSMBusXferCore(byte addr, byte read_write, byte command, int size, SMBusData data)
         {
+            if (IsDDR4PageSelectorAddress(addr))
+            {
+                if (read_write != I2CConstants.I2C_SMBUS_WRITE)
+                {
+                    return -SharedConstants.ENOTSUP;
+                }
+
+                if (size.AnyOf(I2CConstants.I2C_SMBUS_QUICK, I2CConstants.I2C_SMBUS_BYTE_DATA))
+                {
+                    return SetBankCore((byte)(addr - IMCConstants.DDR4PageAddress0)) ? 0 : -SharedConstants.EIO;
+                }
+
+                return -SharedConstants.ENOTSUP;
+            }
+
             if (size.AnyOf(I2CConstants.I2C_SMBUS_BLOCK_DATA, I2CConstants.I2C_SMBUS_I2C_BLOCK_DATA))
             {
                 return ReadBlockDataByByte(addr, read_write, command, data);
@@ -322,13 +337,25 @@ namespace RAMSPDToolkit.I2CSMBus
                 return -SharedConstants.ENOTSUP;
             }
 
-            var decoded = IMCUtilities.Decode(command);
+            if (size == I2CConstants.I2C_SMBUS_WORD_DATA && IsDDR4ThermalSensorAddress(addr))
+            {
+                offset = command;
+                opcode = IMCConstants.ThermalSensorOpcode;
+                commandSlot = (byte)(addr & 0x07);
 
-            offset = addr;
-            opcode = decoded.Opcode;
-            commandSlot = decoded.Slot;
+                return 0;
+            }
 
-            return 0;
+            if (size == I2CConstants.I2C_SMBUS_BYTE_DATA && IsSPDDeviceAddress(addr))
+            {
+                offset = command;
+                opcode = IMCConstants.SPDOpcode;
+                commandSlot = (byte)(addr & 0x07);
+
+                return 0;
+            }
+
+            return -SharedConstants.ENOTSUP;
         }
 
         int ReadBlockDataByByte(byte addr, byte read_write, byte command, SMBusData data)
@@ -349,7 +376,7 @@ namespace RAMSPDToolkit.I2CSMBus
                 return -SharedConstants.EINVAL;
             }
 
-            if (addr + length > IMCConstants.AddressSpace8BitSize)
+            if (command + length > IMCConstants.AddressSpace8BitSize)
             {
                 return -SharedConstants.EINVAL;
             }
@@ -358,9 +385,9 @@ namespace RAMSPDToolkit.I2CSMBus
 
             for (int index = 0; index < length; ++index)
             {
-                var currentAddress = (byte)(addr + index);
+                var currentCommand = (byte)(command + index);
 
-                var status = PrepareImcTransfer(currentAddress, command, I2CConstants.I2C_SMBUS_BYTE_DATA, out byte offset, out byte opcode, out byte commandSlot);
+                var status = PrepareImcTransfer(addr, currentCommand, I2CConstants.I2C_SMBUS_BYTE_DATA, out byte offset, out byte opcode, out byte commandSlot);
                 if (status < 0)
                 {
                     return status;
@@ -380,6 +407,21 @@ namespace RAMSPDToolkit.I2CSMBus
             }
 
             return 0;
+        }
+
+        static bool IsDDR4PageSelectorAddress(byte addr)
+        {
+            return addr == IMCConstants.DDR4PageAddress0 || addr == IMCConstants.DDR4PageAddress1;
+        }
+
+        static bool IsDDR4ThermalSensorAddress(byte addr)
+        {
+            return addr >= IMCConstants.DDR4ThermalSensorBegin && addr <= IMCConstants.DDR4ThermalSensorEnd;
+        }
+
+        static bool IsSPDDeviceAddress(byte addr)
+        {
+            return addr >= IMCConstants.SPDAddressBegin && addr <= IMCConstants.SPDAddressEnd;
         }
 
         int imcAccess(byte offset, byte read_write, byte opcode, byte commandSlot, int size, SMBusData data)
