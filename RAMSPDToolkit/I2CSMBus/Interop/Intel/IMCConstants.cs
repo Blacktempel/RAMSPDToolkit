@@ -25,6 +25,7 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.Intel
 
         //Bits in CMD
         public const uint WordBit           = 0x00020000;
+        public const uint WriteOperation    = 0x00008000;
         public const uint GoBit             = 0x00080000;
         public const uint TsodActiveBit     = 0x00100000;
         public const uint CommandToggleBit  = 0x20000000;
@@ -49,8 +50,9 @@ namespace RAMSPDToolkit.I2CSMBus.Interop.Intel
         //Status bits
         public const uint StsBusy      = 0x1;
         public const uint StsError     = 0x2;
-        public const uint StsDoneMask  = 0x6;
-        public const uint StsDoneOk    = 0x4;
+        public const uint StsReadDone  = 0x4;
+        public const uint StsWriteDone = 0x8;
+        public const uint StsAnyDone   = StsError | StsReadDone | StsWriteDone;
         public const uint StsStateMask = 0x7;
 
         public const int StartRetries           = 5;

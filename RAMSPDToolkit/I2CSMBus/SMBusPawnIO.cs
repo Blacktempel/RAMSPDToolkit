@@ -76,7 +76,7 @@ namespace RAMSPDToolkit.I2CSMBus
 
             if (PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelSkylakeIMC)
             {
-                inSize = 5;
+                inSize = 9;
             }
 
             var inBuffer = new long[inSize];
@@ -115,8 +115,17 @@ namespace RAMSPDToolkit.I2CSMBus
 
                     if (data != null && inBuffer.Length >= 5)
                     {
-                        // inBuffer[4]: for reads = requested byte count; for writes = packed length + first bytes
                         inBuffer[4] = data[0];
+
+                        if (read_write == I2CConstants.I2C_SMBUS_WRITE && inBuffer.Length >= 9)
+                        {
+                            for (int i = 0; i < data[0]; i++)
+                            {
+                                int cellIndex = i / 8;
+                                int byteOffset = i % 8;
+                                inBuffer[5 + cellIndex] |= (long)data[i + 1] << (byteOffset * 8);
+                            }
+                        }
                     }
                     break;
             }
