@@ -71,13 +71,8 @@ namespace RAMSPDToolkit.I2CSMBus
 
         protected override int I2CSMBusXfer(byte addr, byte read_write, byte command, int size, SMBusData data)
         {
-            uint inSize = 9;
-            uint outSize = 5;
-
-            if (PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelSkylakeIMC)
-            {
-                inSize = 9;
-            }
+            uint inSize = PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelSkylakeIMC ? 9u : 5u;
+            uint outSize = PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelSkylakeIMC ? 5u : 1u;
 
             var inBuffer = new long[inSize];
 
@@ -134,15 +129,11 @@ namespace RAMSPDToolkit.I2CSMBus
 
             if (PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelSkylakeIMC)
             {
-                // The Intel IMC Pawn module implements BYTE/WORD/BLOCK via one fixed-size IOCTL.
-                // Keep the real output buffer large enough for block reads, but only copy the
-                // meaningful low cell for BYTE/WORD responses into SMBusData below.
+                // The Intel IMC Pawn module uses one fixed-size IOCTL for BYTE, BYTE_DATA and WORD_DATA:
+                // input[0..8] and output[0..4]. The module itself returns STATUS_NOT_SUPPORTED for
+                // QUICK and BLOCK transactions.
                 outSize = 5;
-
-                if (!isBlockData)
-                {
-                    dataCopySize = 1;
-                }
+                dataCopySize = isBlockData ? outSize : 1u;
             }
 
             var outBuffer = new long[outSize];
@@ -159,7 +150,7 @@ namespace RAMSPDToolkit.I2CSMBus
                 status = PawnIO.Execute("ioctl_smbus_xfer", inBuffer, inSize, outBuffer, outSize, out var retSize);
             }
 
-            if (data != null)
+            if (status == 0 && data != null)
             {
                 if (isBlockData && read_write == I2CConstants.I2C_SMBUS_READ)
                 {
@@ -200,7 +191,7 @@ namespace RAMSPDToolkit.I2CSMBus
                 case PawnIOSMBusIdentifier.Piix4:
                     return ReadBlockDataByWord(addr, command, length, values);
                 case PawnIOSMBusIdentifier.IntelSkylakeIMC:
-                    throw new NotImplementedException();
+                    return ReadBlockDataByWord(addr, command, length, values);
                 default:
                     throw new NotImplementedException($"{nameof(i2c_smbus_read_block_data_compat)} for {PawnIOSMBusIdentifier} was not implemented.");
             }
@@ -301,40 +292,6 @@ namespace RAMSPDToolkit.I2CSMBus
             }
 
             return any;
-        }
-
-        #endregion
-
-        #region Internal
-
-        internal bool SetBank(byte bankIndex)
-        {
-            if (PawnIOSMBusIdentifier != PawnIOSMBusIdentifier.IntelSkylakeIMC)
-            {
-                return false;
-            }
-
-            if (bankIndex > 1)
-            {
-                return false;
-            }
-
-            uint inSize = 1;
-            uint outSize = 1;
-
-            var inBuffer = new long[inSize];
-            var outBuffer = new long[outSize];
-
-            inBuffer[0] = bankIndex;
-
-            int status;
-
-            using (var guard = new WorldMutexGuard(WorldMutexManager.WorldSMBusMutex))
-            {
-                status = PawnIO.Execute("ioctl_set_bank", inBuffer, inSize, outBuffer, outSize, out var returnSize);
-            }
-
-            return status == 0;
         }
 
         #endregion

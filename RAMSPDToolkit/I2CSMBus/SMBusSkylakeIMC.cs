@@ -9,7 +9,6 @@
  * LibreHardwareMonitor; Linux Kernel; OpenRGB; WinRing0 (QCute)
  */
 
-using BlackSharp.Core.Extensions;
 using BlackSharp.Core.Interop.Windows.Mutexes;
 using RAMSPDToolkit.I2CSMBus.Interfaces;
 using RAMSPDToolkit.I2CSMBus.Interop;
@@ -21,6 +20,7 @@ using RAMSPDToolkit.Mutexes;
 using RAMSPDToolkit.PCI;
 using RAMSPDToolkit.PCI.Linux;
 using RAMSPDToolkit.Windows.Driver;
+using System.Diagnostics;
 using OS = BlackSharp.Core.Platform.OperatingSystem;
 
 namespace RAMSPDToolkit.I2CSMBus
@@ -90,30 +90,14 @@ namespace RAMSPDToolkit.I2CSMBus
             throw new NotImplementedException();
         }
 
+        public override int i2c_smbus_read_block_data_compat(byte addr, byte command, byte length, byte[] values)
+        {
+            return ReadBlockDataByWord(addr, command, length, values);
+        }
+
         #endregion
 
         #region Public
-
-        public bool SetBank(byte bankIndex)
-        {
-            if (OS.IsWindows())
-            {
-                //The global SMBus mutex has to be used to stay compliant with other software.
-                //For example we have received confirmation of HWiNFO and SIV to use the SMBus mutex for this access.
-                using (var pci = new WorldMutexGuard(WorldMutexManager.WorldSMBusMutex))
-                {
-                    return SetBankCore(bankIndex);
-                }
-            }
-            else if (OS.IsLinux())
-            {
-                return SetBankCore(bankIndex);
-            }
-            else
-            {
-                throw new PlatformNotSupportedException();
-            }
-        }
 
         public static bool SMBusDetect()
         {
@@ -269,11 +253,11 @@ namespace RAMSPDToolkit.I2CSMBus
             }
         }
 
-        static void WritePciConfigDwordEx(uint pciAddress, uint regAddress, uint value)
+        static bool WritePciConfigDwordEx(uint pciAddress, uint regAddress, uint value)
         {
             if (OS.IsWindows())
             {
-                DriverAccess.WritePciConfigDwordEx(pciAddress, regAddress, value);
+                return DriverAccess.WritePciConfigDwordEx(pciAddress, regAddress, value);
             }
             else if (OS.IsLinux())
             {
@@ -285,6 +269,7 @@ namespace RAMSPDToolkit.I2CSMBus
                 var path = $"/sys/bus/pci/devices/0000:{bus:X2}:{device:X2}.{function:X1}";
 
                 PCIConfigAccessor.WritePCIConfigInt32(path, (int)regAddress, value);
+                return true;
             }
             else
             {
@@ -294,187 +279,30 @@ namespace RAMSPDToolkit.I2CSMBus
 
         int I2CSMBusXferCore(byte addr, byte read_write, byte command, int size, SMBusData data)
         {
-            if (IsDDR4PageSelectorAddress(addr))
-            {
-                if (read_write != I2CConstants.I2C_SMBUS_WRITE)
-                {
-                    return -SharedConstants.ENOTSUP;
-                }
-
-                if (size.AnyOf(I2CConstants.I2C_SMBUS_QUICK, I2CConstants.I2C_SMBUS_BYTE_DATA))
-                {
-                    return SetBankCore((byte)(addr - IMCConstants.DDR4PageAddress0)) ? 0 : -SharedConstants.EIO;
-                }
-
-                return -SharedConstants.ENOTSUP;
-            }
-
-            if (size.AnyOf(I2CConstants.I2C_SMBUS_BLOCK_DATA, I2CConstants.I2C_SMBUS_I2C_BLOCK_DATA))
-            {
-                if (read_write == I2CConstants.I2C_SMBUS_READ)
-                {
-                    return ReadBlockDataByByte(addr, command, data);
-                }
-
-                if (read_write == I2CConstants.I2C_SMBUS_WRITE)
-                {
-                    return WriteBlockDataByByte(addr, command, data);
-                }
-
-                return -SharedConstants.EINVAL;
-            }
-
-            var status = PrepareImcTransfer(addr, command, size, out byte offset, out byte opcode, out byte commandSlot);
+            var status = ValidateImcTransfer(size);
             if (status < 0)
             {
                 return status;
             }
 
-            status = imcAccess(offset, read_write, opcode, commandSlot, size, data);
-
-            return status;
+            return imcAccess(command, read_write, addr, size, data);
         }
 
-        static int PrepareImcTransfer(byte addr, byte command, int size, out byte offset, out byte opcode, out byte commandSlot)
+        static int ValidateImcTransfer(int size)
         {
-            offset = 0;
-            opcode = 0;
-            commandSlot = 0;
-
-            if (size != I2CConstants.I2C_SMBUS_BYTE_DATA
+            if (size != I2CConstants.I2C_SMBUS_BYTE
+             && size != I2CConstants.I2C_SMBUS_BYTE_DATA
              && size != I2CConstants.I2C_SMBUS_WORD_DATA)
             {
                 return -SharedConstants.ENOTSUP;
             }
 
-            if (size == I2CConstants.I2C_SMBUS_WORD_DATA && IsDDR4ThermalSensorAddress(addr))
-            {
-                offset = command;
-                opcode = IMCConstants.ThermalSensorOpcode;
-                commandSlot = (byte)(addr & 0x07);
-
-                return 0;
-            }
-
-            if (size == I2CConstants.I2C_SMBUS_BYTE_DATA && IsSPDDeviceAddress(addr))
-            {
-                offset = command;
-                opcode = IMCConstants.SPDOpcode;
-                commandSlot = (byte)(addr & 0x07);
-
-                return 0;
-            }
-
-            return -SharedConstants.ENOTSUP;
-        }
-
-        int ReadBlockDataByByte(byte addr, byte command, SMBusData data)
-        {
-            if (data == null)
-            {
-                return -SharedConstants.EINVAL;
-            }
-
-            var length = data[0];
-            if (length == 0 || length > I2CConstants.I2C_SMBUS_BLOCK_MAX)
-            {
-                return -SharedConstants.EINVAL;
-            }
-
-            if (command + length > IMCConstants.AddressSpace8BitSize)
-            {
-                return -SharedConstants.EINVAL;
-            }
-
-            data[0] = 0;
-
-            for (int index = 0; index < length; ++index)
-            {
-                var currentCommand = (byte)(command + index);
-
-                var status = PrepareImcTransfer(addr, currentCommand, I2CConstants.I2C_SMBUS_BYTE_DATA, out byte offset, out byte opcode, out byte commandSlot);
-                if (status < 0)
-                {
-                    return status;
-                }
-
-                using (var byteData = new SMBusData())
-                {
-                    status = imcAccess(offset, I2CConstants.I2C_SMBUS_READ, opcode, commandSlot, I2CConstants.I2C_SMBUS_BYTE_DATA, byteData);
-                    if (status < 0)
-                    {
-                        return status;
-                    }
-
-                    data[index + 1] = byteData.ByteData;
-                    data[0] = (byte)(index + 1);
-                }
-            }
-
             return 0;
         }
 
-        int WriteBlockDataByByte(byte addr, byte command, SMBusData data)
+        int imcAccess(byte command, byte read_write, byte addr, int size, SMBusData data)
         {
-            if (data == null)
-            {
-                return -SharedConstants.EINVAL;
-            }
-
-            var length = data[0];
-            if (length == 0 || length > I2CConstants.I2C_SMBUS_BLOCK_MAX)
-            {
-                return -SharedConstants.EINVAL;
-            }
-
-            if (command + length > IMCConstants.AddressSpace8BitSize)
-            {
-                return -SharedConstants.EINVAL;
-            }
-
-            for (int index = 0; index < length; ++index)
-            {
-                var currentCommand = (byte)(command + index);
-
-                var status = PrepareImcTransfer(addr, currentCommand, I2CConstants.I2C_SMBUS_BYTE_DATA, out byte offset, out byte opcode, out byte commandSlot);
-                if (status < 0)
-                {
-                    return status;
-                }
-
-                using (var byteData = new SMBusData())
-                {
-                    byteData.ByteData = data[index + 1];
-
-                    status = imcAccess(offset, I2CConstants.I2C_SMBUS_WRITE, opcode, commandSlot, I2CConstants.I2C_SMBUS_BYTE_DATA, byteData);
-                    if (status < 0)
-                    {
-                        return status;
-                    }
-                }
-            }
-
-            return 0;
-        }
-
-        static bool IsDDR4PageSelectorAddress(byte addr)
-        {
-            return addr == IMCConstants.DDR4PageAddress0 || addr == IMCConstants.DDR4PageAddress1;
-        }
-
-        static bool IsDDR4ThermalSensorAddress(byte addr)
-        {
-            return addr >= IMCConstants.DDR4ThermalSensorBegin && addr <= IMCConstants.DDR4ThermalSensorEnd;
-        }
-
-        static bool IsSPDDeviceAddress(byte addr)
-        {
-            return addr >= IMCConstants.SPDAddressBegin && addr <= IMCConstants.SPDAddressEnd;
-        }
-
-        int imcAccess(byte offset, byte read_write, byte opcode, byte commandSlot, int size, SMBusData data)
-        {
-            if (!size.AnyOf(I2CConstants.I2C_SMBUS_BYTE_DATA, I2CConstants.I2C_SMBUS_WORD_DATA))
+            if (ValidateImcTransfer(size) < 0)
             {
                 return -SharedConstants.ENOTSUP;
             }
@@ -484,84 +312,90 @@ namespace RAMSPDToolkit.I2CSMBus
                 return -SharedConstants.EINVAL;
             }
 
-            if (data == null)
+            if (data == null && (read_write == I2CConstants.I2C_SMBUS_READ || size != I2CConstants.I2C_SMBUS_BYTE))
             {
                 return -SharedConstants.EINVAL;
             }
 
-            for (int i = 0; i < IMCConstants.StartRetries; ++i)
+            uint oldCommand = 0;
+            if (!ReadPciConfigDwordEx(_PCIAddress, CmdReg, ref oldCommand))
             {
-                uint oldCommand = 0;
-                if (!ReadPciConfigDwordEx(_PCIAddress, CmdReg, ref oldCommand))
+                return -SharedConstants.EIO;
+            }
+
+            if (!ClearTsodStateIfNeeded(oldCommand))
+            {
+                return -SharedConstants.EBUSY;
+            }
+
+            uint cmd = IMCConstants.CommandPrefix
+                     | ((uint)(addr & 0xFF) << IMCConstants.AddrShift)
+                     | command;
+
+            if (size == I2CConstants.I2C_SMBUS_BYTE)
+            {
+                cmd |= IMCConstants.SelPtrBit;
+            }
+
+            if (size == I2CConstants.I2C_SMBUS_WORD_DATA)
+            {
+                cmd |= IMCConstants.WordBit;
+            }
+
+            if (read_write == I2CConstants.I2C_SMBUS_WRITE)
+            {
+                ushort writeData = data != null ? data.ByteData : (byte)0;
+
+                if (size == I2CConstants.I2C_SMBUS_WORD_DATA)
+                {
+                    writeData = (ushort)(((data.Word & 0xFF00) >> 8) | ((data.Word & 0x00FF) << 8));
+                }
+
+                if (!WritePciConfigDwordEx(_PCIAddress, DatReg, (uint)writeData << 16))
                 {
                     return -SharedConstants.EIO;
                 }
 
-                if (!ClearTsodStateIfNeeded(oldCommand))
-                {
-                    continue;
-                }
-
-                uint cmd = IMCConstants.CommandPrefix
-                         | ((uint)(opcode & 0x0F) << IMCConstants.OpShift)
-                         | ((uint)(commandSlot & 0x07) << IMCConstants.SlotShift)
-                         | offset;
-
-                if (size == I2CConstants.I2C_SMBUS_WORD_DATA)
-                {
-                    cmd |= IMCConstants.WordBit;
-                }
-
-                if (read_write == I2CConstants.I2C_SMBUS_WRITE)
-                {
-                    ushort writeData = data.ByteData;
-
-                    if (size == I2CConstants.I2C_SMBUS_WORD_DATA)
-                    {
-                        writeData = (ushort)(((data.Word & 0xFF00) >> 8) | ((data.Word & 0x00FF) << 8));
-                    }
-
-                    WritePciConfigDwordEx(_PCIAddress, DatReg, (uint)writeData << 16);
-                    cmd |= IMCConstants.WriteOperation;
-                }
-
-                WritePciConfigDwordEx(_PCIAddress, CmdReg, cmd);
-
-                var expectedDoneBit = read_write == I2CConstants.I2C_SMBUS_WRITE ? IMCConstants.StsWriteDone : IMCConstants.StsReadDone;
-                if (WaitTransferComplete(expectedDoneBit, out _))
-                {
-                    if (read_write == I2CConstants.I2C_SMBUS_WRITE)
-                    {
-                        WritePciConfigDwordEx(_PCIAddress, CmdReg, oldCommand);
-                        return 0;
-                    }
-
-                    uint dataReg = 0;
-
-                    var readOk = ReadPciConfigDwordEx(_PCIAddress, DatReg, ref dataReg);
-
-                    WritePciConfigDwordEx(_PCIAddress, CmdReg, oldCommand);
-
-                    if (!readOk)
-                    {
-                        return -SharedConstants.EIO;
-                    }
-
-                    switch (size)
-                    {
-                        case I2CConstants.I2C_SMBUS_BYTE_DATA:
-                            data.ByteData = (byte)(dataReg & 0xFF);
-                            return 0;
-                        case I2CConstants.I2C_SMBUS_WORD_DATA:
-                            data.Word = (ushort)(((dataReg & 0xFF00) >> 8) | ((dataReg & 0x00FF) << 8));
-                            return 0;
-                    }
-                }
-
-                WritePciConfigDwordEx(_PCIAddress, CmdReg, oldCommand);
+                cmd |= IMCConstants.WriteOperation;
             }
 
-            return -SharedConstants.ETIMEDOUT;
+            if (!WritePciConfigDwordEx(_PCIAddress, CmdReg, cmd))
+            {
+                return -SharedConstants.EIO;
+            }
+
+            var expectedDoneBit = read_write == I2CConstants.I2C_SMBUS_WRITE ? IMCConstants.StsWriteDone : IMCConstants.StsReadDone;
+            if (WaitTransferComplete(expectedDoneBit, out _))
+            {
+                if (read_write == I2CConstants.I2C_SMBUS_WRITE)
+                {
+                    WritePciConfigDwordEx(_PCIAddress, CmdReg, oldCommand);
+                    return 0;
+                }
+
+                uint dataReg = 0;
+                var readOk = ReadPciConfigDwordEx(_PCIAddress, DatReg, ref dataReg);
+
+                WritePciConfigDwordEx(_PCIAddress, CmdReg, oldCommand);
+
+                if (!readOk)
+                {
+                    return -SharedConstants.EIO;
+                }
+
+                if (size == I2CConstants.I2C_SMBUS_BYTE || size == I2CConstants.I2C_SMBUS_BYTE_DATA)
+                {
+                    data.ByteData = (byte)(dataReg & 0xFF);
+                    return 0;
+                }
+
+                data.Word = (ushort)(((dataReg & 0xFF00) >> 8) | ((dataReg & 0x00FF) << 8));
+                return 0;
+            }
+
+            WritePciConfigDwordEx(_PCIAddress, CmdReg, oldCommand);
+
+            return -SharedConstants.EBUSY;
         }
 
         bool ClearTsodStateIfNeeded(uint oldCommand)
@@ -585,7 +419,10 @@ namespace RAMSPDToolkit.I2CSMBus
                 }
             }
 
-            WritePciConfigDwordEx(_PCIAddress, CmdReg, oldCommand & IMCConstants.CommandKeepMask);
+            if (!WritePciConfigDwordEx(_PCIAddress, CmdReg, oldCommand & IMCConstants.CommandKeepMask))
+            {
+                return false;
+            }
 
             for (int i = 0; i < IMCConstants.PageCommandRetries; ++i)
             {
@@ -632,7 +469,10 @@ namespace RAMSPDToolkit.I2CSMBus
                         return false;
                     }
 
-                    WritePciConfigDwordEx(_PCIAddress, CmdReg, command ^ IMCConstants.CommandToggleBit);
+                    if (!WritePciConfigDwordEx(_PCIAddress, CmdReg, command ^ IMCConstants.CommandToggleBit))
+                    {
+                        return false;
+                    }
 
                     if (!ReadPciConfigDwordEx(_PCIAddress, StsReg, ref lastStatus))
                     {
@@ -662,58 +502,6 @@ namespace RAMSPDToolkit.I2CSMBus
             return (lastStatus & doneMask) == expectedDoneBit;
         }
 
-        bool SetBankCore(byte bankIndex)
-        {
-            if (bankIndex > 1)
-            {
-                LogSimple.LogWarn($"{nameof(SMBusSkylakeIMC)}.{nameof(SetBank)}: Index not in range '{bankIndex}'.");
-                return false;
-            }
-
-            for (int i = 0; i < IMCConstants.StartRetries; ++i)
-            {
-                uint oldCommand = 0;
-                if (!ReadPciConfigDwordEx(_PCIAddress, CmdReg, ref oldCommand))
-                {
-                    return false;
-                }
-
-                if (!ClearTsodStateIfNeeded(oldCommand))
-                {
-                    continue;
-                }
-
-                uint cmd = (((uint)(bankIndex & 1) | IMCConstants.PageCommand) << 8);
-
-                WritePciConfigDwordEx(_PCIAddress, CmdReg, cmd);
-
-                uint lastStatus = 0;
-                bool completed = false;
-
-                for (int j = 0; j < IMCConstants.PageStatusRetries; ++j)
-                {
-                    if (!ReadPciConfigDwordEx(_PCIAddress, StsReg, ref lastStatus))
-                    {
-                        break;
-                    }
-
-                    if ((lastStatus & 0x03) != IMCConstants.StsBusy)
-                    {
-                        completed = true;
-                        break;
-                    }
-                }
-
-                WritePciConfigDwordEx(_PCIAddress, CmdReg, oldCommand);
-
-                if (completed)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
 
         #endregion
     }

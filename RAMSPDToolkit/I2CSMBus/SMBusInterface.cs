@@ -406,9 +406,9 @@ namespace RAMSPDToolkit.I2CSMBus
 
             byte index = 0;
 
-            //PIIX4 supports SMBus Block Read, where the target supplies a Count byte,
-            //but not fixed-length I2C block reads. Mirror the Linux I2C helper and
-            //read the SPD range using word transactions where possible.
+            //Some controllers do not support fixed-length I2C block reads.
+            //Read the requested range using word transactions where possible and
+            //a byte transaction for an odd trailing byte.
             while (index + sizeof(ushort) <= length)
             {
                 int status = i2c_smbus_read_word_data(addr, (byte)(command + index));

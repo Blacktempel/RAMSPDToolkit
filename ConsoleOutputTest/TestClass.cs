@@ -52,7 +52,7 @@ namespace ConsoleOutputTest
                 if (OperatingSystem.IsWindows())
                 {
                     //Init driver
-                    if (DriverManager.LoadDriver(DriverImplementation.PawnIO))
+                    if (DriverManager.LoadDriver(DriverImplementation.WinRing0))
                     {
                         Log($"***** Driver {DriverManager.DriverImplementation} is open. *****");
                     }
@@ -91,10 +91,6 @@ namespace ConsoleOutputTest
                         linux.CheckFuncs();
                     }
 
-                    if (bus is SMBusSkylakeIMC
-                     || (bus is SMBusPawnIO p && p.PawnIOSMBusIdentifier == PawnIOSMBusIdentifier.IntelSkylakeIMC))
-                    { }
-                    else
                     {
                         //This outputs a table with detected devices for each "functionality"
                         Log();
