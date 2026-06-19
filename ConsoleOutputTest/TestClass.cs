@@ -52,7 +52,7 @@ namespace ConsoleOutputTest
                 if (OperatingSystem.IsWindows())
                 {
                     //Init driver
-                    if (DriverManager.LoadDriver(DriverImplementation.WinRing0))
+                    if (DriverManager.LoadDriver(DriverImplementation.PawnIO))
                     {
                         Log($"***** Driver {DriverManager.DriverImplementation} is open. *****");
                     }

@@ -10,6 +10,7 @@
  */
 
 using RAMSPDToolkit.I2CSMBus.Interop;
+using RAMSPDToolkit.I2CSMBus.Interop.Shared;
 using RAMSPDToolkit.PCI;
 using System.Runtime.InteropServices;
 
@@ -380,6 +381,61 @@ namespace RAMSPDToolkit.I2CSMBus
         public int i2c_write_block(byte addr, int size, byte[] data)
         {
             return i2c_xfer_call(addr, I2CConstants.I2C_SMBUS_WRITE, size, data);
+        }
+
+        #endregion
+
+        #region Protected
+
+        protected int ReadBlockDataByWord(byte addr, byte command, byte length, byte[] values)
+        {
+            if (length > I2CConstants.I2C_SMBUS_BLOCK_MAX)
+            {
+                length = I2CConstants.I2C_SMBUS_BLOCK_MAX;
+            }
+
+            if (length > values.Length)
+            {
+                length = (byte)values.Length;
+            }
+
+            if (command + length > byte.MaxValue + 1)
+            {
+                return -SharedConstants.EINVAL;
+            }
+
+            byte index = 0;
+
+            //PIIX4 supports SMBus Block Read, where the target supplies a Count byte,
+            //but not fixed-length I2C block reads. Mirror the Linux I2C helper and
+            //read the SPD range using word transactions where possible.
+            while (index + sizeof(ushort) <= length)
+            {
+                int status = i2c_smbus_read_word_data(addr, (byte)(command + index));
+                if (status < 0)
+                {
+                    return status;
+                }
+
+                values[index] = (byte)(status & byte.MaxValue);
+                values[index + 1] = (byte)(status >> 8);
+
+                index += sizeof(ushort);
+            }
+
+            if (index < length)
+            {
+                int status = i2c_smbus_read_byte_data(addr, (byte)(command + index));
+                if (status < 0)
+                {
+                    return status;
+                }
+
+                values[index] = (byte)status;
+                ++index;
+            }
+
+            return index;
         }
 
         #endregion

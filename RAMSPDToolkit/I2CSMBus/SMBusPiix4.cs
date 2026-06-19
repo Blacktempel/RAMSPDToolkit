@@ -99,7 +99,7 @@ namespace RAMSPDToolkit.I2CSMBus
 
         public override int i2c_smbus_read_block_data_compat(byte addr, byte command, byte length, byte[] values)
         {
-            return i2c_smbus_read_block_data(addr, command, values);
+            return ReadBlockDataByWord(addr, command, length, values);
         }
 
         #endregion

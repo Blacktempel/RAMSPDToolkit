@@ -173,6 +173,7 @@ namespace RAMSPDToolkit.I2CSMBus
                     {
                         int cellIndex = i / 8;
                         int byteOffset = i % 8;
+
                         data[i + 1] = (byte)((outBuffer[1 + cellIndex] >> (byteOffset * 8)) & 0xFF);
                     }
                 }
@@ -188,6 +189,21 @@ namespace RAMSPDToolkit.I2CSMBus
         protected override int I2CXfer(byte addr, byte read_write, int? size, byte[] data)
         {
             return -1;
+        }
+
+        public override int i2c_smbus_read_block_data_compat(byte addr, byte command, byte length, byte[] values)
+        {
+            switch (PawnIOSMBusIdentifier)
+            {
+                case PawnIOSMBusIdentifier.I801:
+                    return base.i2c_smbus_read_block_data_compat(addr, command, length, values);
+                case PawnIOSMBusIdentifier.Piix4:
+                    return ReadBlockDataByWord(addr, command, length, values);
+                case PawnIOSMBusIdentifier.IntelSkylakeIMC:
+                    throw new NotImplementedException();
+                default:
+                    throw new NotImplementedException($"{nameof(i2c_smbus_read_block_data_compat)} for {PawnIOSMBusIdentifier} was not implemented.");
+            }
         }
 
         #endregion
