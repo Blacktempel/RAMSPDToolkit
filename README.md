@@ -28,7 +28,7 @@ We currently support Windows and Linux.<br/>
 There is currently no plan to support Mac / Apple Computers.
 
 ## Which RAM is supported ?
-We support DDR4 & DDR5 RAM on Intel & AMD systems.
+We support DDR3, DDR4 & DDR5 RAM on Intel & AMD systems.
 
 ## Where can I download it ?
 You can download the latest release [from here.](https://github.com/Blacktempel/RAMSPDToolkit/releases)

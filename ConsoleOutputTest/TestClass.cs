@@ -107,6 +107,9 @@ namespace ConsoleOutputTest
                     //Some mainboards could have up to 8 modules.
                     for (byte i = SPDConstants.SPD_BEGIN; i <= SPDConstants.SPD_END; i++)
                     {
+                        //Test for DDR3 RAM
+                        ManuallyTestForDDR3(bus, i);
+
                         //Test for DDR4 RAM
                         ManuallyTestForDDR4(bus, i);
 
@@ -137,6 +140,17 @@ namespace ConsoleOutputTest
                     DriverManager.UnloadDriver();
                     Log("***** Closed driver. *****");
                 }
+            }
+        }
+
+        void ManuallyTestForDDR3(SMBusInterface bus, byte i)
+        {
+            //Check if the SPD is available
+            if (DDR3Accessor.IsAvailable(bus, i))
+            {
+                Log($"{nameof(DDR3Accessor)} available at {i:X2}.");
+
+                TryReadSPDData<DDR3Accessor>(bus, i);
             }
         }
 

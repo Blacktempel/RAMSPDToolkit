@@ -100,28 +100,24 @@ namespace RAMSPDToolkit.SPD
             {
                 accessor = new DDR5Accessor(_Bus, _Address);
             }
+            else if (  (_MemoryType == SPDMemoryType.SPD_RESERVED
+                     || _MemoryType == SPDMemoryType.SPD_DDR3_SDRAM
+                     || _MemoryType == SPDMemoryType.SPD_LPDDR3_SDRAM )
+             && DDR3Accessor.IsAvailable(_Bus, _Address))
+            {
+                accessor = new DDR3Accessor(_Bus, _Address);
+            }
             else if (_MemoryType == SPDMemoryType.SPD_RESERVED)
             {
-                //Probe the SPD directly, probably an older system than DDR4
+                //Read the memory type for diagnostics even if no supported accessor was detected
                 int value = _Bus.i2c_smbus_read_byte_data(_Address, 0x02);
 
-                if (value < 0)
-                {
-                    _Valid = false;
-                }
-                else
+                if (value >= 0)
                 {
                     _MemoryType = (SPDMemoryType)value;
-
-                    //We are only interested in DDR4 and DDR5 systems
-                    _Valid = (_MemoryType == SPDMemoryType.SPD_DDR4_SDRAM ||
-                                _MemoryType == SPDMemoryType.SPD_DDR4E_SDRAM ||
-                                _MemoryType == SPDMemoryType.SPD_LPDDR4_SDRAM ||
-                                _MemoryType == SPDMemoryType.SPD_LPDDR4X_SDRAM ||
-                                _MemoryType == SPDMemoryType.SPD_DDR5_SDRAM ||
-                                _MemoryType == SPDMemoryType.SPD_LPDDR5_SDRAM);
                 }
 
+                _Valid = false;
                 return;
             }
 
