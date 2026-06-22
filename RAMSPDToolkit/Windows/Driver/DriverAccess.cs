@@ -76,9 +76,9 @@ namespace RAMSPDToolkit.Windows.Driver
             GetDriver().WritePciConfigWord(pciAddress, regAddress, value);
         }
 
-        public static void WritePciConfigDwordEx(uint pciAddress, uint regAddress, uint value)
+        public static bool WritePciConfigDwordEx(uint pciAddress, uint regAddress, uint value)
         {
-            GetDriver().WritePciConfigDwordEx(pciAddress, regAddress, value);
+            return GetDriver().WritePciConfigDwordEx(pciAddress, regAddress, value);
         }
 
 #if _PHYSICAL_MEMORY_SUPPORT

@@ -12,6 +12,7 @@
 using BlackSharp.Core.BitOperations;
 using BlackSharp.Core.Extensions;
 using RAMSPDToolkit.I2CSMBus;
+using RAMSPDToolkit.I2CSMBus.Interop.PawnIO;
 using RAMSPDToolkit.I2CSMBus.Interop.Shared;
 using RAMSPDToolkit.Logging;
 using RAMSPDToolkit.SPD.Interfaces;
@@ -87,35 +88,7 @@ namespace RAMSPDToolkit.SPD
         /// <returns>True if DDR4 is available at specified address; false otherwise.</returns>
         public static bool IsAvailable(SMBusInterface bus, byte address)
         {
-            //Perform quick transfer to test if i2c address responds
-            int value = bus.i2c_smbus_write_quick(DDR4Constants.SPD_DDR4_ADDRESS_PAGE, 0x00);
-
-            int retries = SPDConstants.SPD_CFG_RETRIES;
-
-            if (value < 0 && retries > 0)
-            {
-                var statusAbs = Math.Abs(value);
-
-                //Try again specified number of times and give up
-                if (statusAbs == SharedConstants.EBUSY ||
-                    statusAbs == SharedConstants.ETIMEDOUT)
-                {
-                    int MAX_RETRIES = retries;
-                    int retry = MAX_RETRIES;
-
-                    while (value < 0 && retry-- > 0)
-                    {
-                        Thread.Sleep(SPDConstants.SPD_IO_DELAY);
-
-                        value = bus.i2c_smbus_write_quick(DDR4Constants.SPD_DDR4_ADDRESS_PAGE, 0x00);
-                    }
-                }
-            }
-
-            if (value < 0)
-            {
-                return false;
-            }
+            int value;
 
             //Select first page
             bus.i2c_smbus_write_byte_data(DDR4Constants.SPD_DDR4_ADDRESS_PAGE, 0x00, DDR4Constants.SPD_DDR4_EEPROM_PAGE_MASK);
@@ -126,10 +99,10 @@ namespace RAMSPDToolkit.SPD
             value = bus.i2c_smbus_read_byte_data(address, DDR4Constants.SPD_DDR4_MODULE_MEMORY_TYPE);
 
             //Check if memory type is DDR4
-            return ((SPDMemoryType)value).AnyOf(SPDMemoryType.SPD_DDR4_SDRAM,
-                                                SPDMemoryType.SPD_DDR4E_SDRAM,
-                                                SPDMemoryType.SPD_LPDDR4_SDRAM,
-                                                SPDMemoryType.SPD_LPDDR4X_SDRAM);
+            return ((SPDMemoryType)value).Any(SPDMemoryType.SPD_DDR4_SDRAM,
+                                              SPDMemoryType.SPD_DDR4E_SDRAM,
+                                              SPDMemoryType.SPD_LPDDR4_SDRAM,
+                                              SPDMemoryType.SPD_LPDDR4X_SDRAM);
         }
 
         #endregion
@@ -231,16 +204,30 @@ namespace RAMSPDToolkit.SPD
                     LogSimple.LogTrace($"0x{_Address:X2} does not have {nameof(DDR4Constants.SPD_DDR4_THERMAL_SENSOR_BIT)} set.");
                     LogSimple.LogTrace($"Checking another way if thermal sensor is present.");
 
-                    //Do a quick read to the thermal sensors address to check if it is available
+                    //Fallback: do a quick read to the thermal sensors address to check if it is available
                     status = _Bus.i2c_smbus_write_quick(_ThermalSensorAddress, 0x00);
 
                     if (status < 0)
                     {
-                        LogSimple.LogTrace($"0x{_Address:X2} Thermal sensor not found.");
+                        LogSimple.LogTrace($"0x{_Address:X2} Thermal sensor address did not respond or quick was unsupported.");
+
+                        //Fallback: probe a mandatory TSOD register.
+                        status = _Bus.i2c_smbus_read_word_data(_ThermalSensorAddress, DDR4Constants.SPD_DDR4_THERMAL_SENSOR_CAPABILITIES_REGISTER);
+
+                        if (status < 0)
+                        {
+                            LogSimple.LogTrace($"0x{_Address:X2} Thermal sensor not found.");
+                            return false;
+                        }
+                        else
+                        {
+                            LogSimple.LogTrace($"0x{_Address:X2} Unregistered thermal sensor found.");
+
+                            return true;
+                        }
                     }
                     else
                     {
-                        //If there is an ACK to the quick read, there is an "unregistered" thermal sensor
                         LogSimple.LogTrace($"0x{_Address:X2} Unregistered thermal sensor found.");
 
                         return true;
