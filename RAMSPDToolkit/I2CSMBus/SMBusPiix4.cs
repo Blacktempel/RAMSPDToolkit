@@ -78,16 +78,12 @@ namespace RAMSPDToolkit.I2CSMBus
             //Lock SMBus mutex
             using (var smbm = new WorldMutexGuard(WorldMutexManager.WorldSMBusMutex))
             {
-                //Lock PCI mutex
-                using (var pci = new WorldMutexGuard(WorldMutexManager.WorldPCIMutex))
+                //Modify (if necessary) and restore PCICMD
+                using (var io = new PCICMDIOGuard(_PCIAddress))
                 {
-                    //Modify (if necessary) and restore PCICMD
-                    using (var io = new PCICMDIOGuard(_PCIAddress))
-                    {
-                        var result = Piix4Access(addr, read_write, command, size, data);
+                    var result = Piix4Access(addr, read_write, command, size, data);
 
-                        return result;
-                    }
+                    return result;
                 }
             }
         }

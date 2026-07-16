@@ -220,74 +220,70 @@ namespace RAMSPDToolkit.I2CSMBus
             //Lock SMBus mutex
             using (var smbm = new WorldMutexGuard(WorldMutexManager.WorldSMBusMutex))
             {
-                //Lock PCI mutex
-                using (var pci = new WorldMutexGuard(WorldMutexManager.WorldPCIMutex))
+                //I801
+                var i801 = pawnIO.LoadModule(PawnIOSMBusIdentifier.I801);
+                if (i801 != null)
                 {
-                    //I801
-                    var i801 = pawnIO.LoadModule(PawnIOSMBusIdentifier.I801);
-                    if (i801 != null)
+                    SMBusManager.AddSMBus(new SMBusPawnIO(i801, PawnIOSMBusIdentifier.I801));
+                    any = true;
+                }
+
+                //Piix4
+                var piix4 = pawnIO.LoadModule(PawnIOSMBusIdentifier.Piix4);
+                if (piix4 != null)
+                {
+                    if (Piix4PortSelect(piix4, 0))
                     {
-                        SMBusManager.AddSMBus(new SMBusPawnIO(i801, PawnIOSMBusIdentifier.I801));
-                        any = true;
+                        SMBusManager.AddSMBus(new SMBusPawnIO(piix4, PawnIOSMBusIdentifier.Piix4));
                     }
 
-                    //Piix4
-                    var piix4 = pawnIO.LoadModule(PawnIOSMBusIdentifier.Piix4);
+                    piix4 = pawnIO.LoadModule(PawnIOSMBusIdentifier.Piix4);
                     if (piix4 != null)
                     {
-                        if (Piix4PortSelect(piix4, 0))
+                        if (Piix4PortSelect(piix4, 1))
                         {
                             SMBusManager.AddSMBus(new SMBusPawnIO(piix4, PawnIOSMBusIdentifier.Piix4));
                         }
-
-                        piix4 = pawnIO.LoadModule(PawnIOSMBusIdentifier.Piix4);
-                        if (piix4 != null)
-                        {
-                            if (Piix4PortSelect(piix4, 1))
-                            {
-                                SMBusManager.AddSMBus(new SMBusPawnIO(piix4, PawnIOSMBusIdentifier.Piix4));
-                            }
-                        }
-
-                        any = true;
                     }
 
-                    //NCT6793
-                    var nct6793 = pawnIO.LoadModule(PawnIOSMBusIdentifier.NCT6793);
-                    if (nct6793 != null)
+                    any = true;
+                }
+
+                //NCT6793
+                var nct6793 = pawnIO.LoadModule(PawnIOSMBusIdentifier.NCT6793);
+                if (nct6793 != null)
+                {
+                    SMBusManager.AddSMBus(new SMBusPawnIO(nct6793, PawnIOSMBusIdentifier.NCT6793));
+                    any = true;
+                }
+
+                //Intel Skylake IMC
+                var intelSkylakeIMC = pawnIO.LoadModule(PawnIOSMBusIdentifier.IntelSkylakeIMC);
+                if (intelSkylakeIMC != null)
+                {
+                    if (IMCSMBusIndexSelect(intelSkylakeIMC, 0))
                     {
-                        SMBusManager.AddSMBus(new SMBusPawnIO(nct6793, PawnIOSMBusIdentifier.NCT6793));
-                        any = true;
+                        var smbus = new SMBusPawnIO(intelSkylakeIMC, PawnIOSMBusIdentifier.IntelSkylakeIMC)
+                        {
+                            SMBusIndex = 0
+                        };
+                        SMBusManager.AddSMBus(smbus);
                     }
 
-                    //Intel Skylake IMC
-                    var intelSkylakeIMC = pawnIO.LoadModule(PawnIOSMBusIdentifier.IntelSkylakeIMC);
+                    intelSkylakeIMC = pawnIO.LoadModule(PawnIOSMBusIdentifier.IntelSkylakeIMC);
                     if (intelSkylakeIMC != null)
                     {
-                        if (IMCSMBusIndexSelect(intelSkylakeIMC, 0))
+                        if (IMCSMBusIndexSelect(intelSkylakeIMC, 1))
                         {
                             var smbus = new SMBusPawnIO(intelSkylakeIMC, PawnIOSMBusIdentifier.IntelSkylakeIMC)
                             {
-                                SMBusIndex = 0
+                                SMBusIndex = 1
                             };
                             SMBusManager.AddSMBus(smbus);
                         }
-
-                        intelSkylakeIMC = pawnIO.LoadModule(PawnIOSMBusIdentifier.IntelSkylakeIMC);
-                        if (intelSkylakeIMC != null)
-                        {
-                            if (IMCSMBusIndexSelect(intelSkylakeIMC, 1))
-                            {
-                                var smbus = new SMBusPawnIO(intelSkylakeIMC, PawnIOSMBusIdentifier.IntelSkylakeIMC)
-                                {
-                                    SMBusIndex = 1
-                                };
-                                SMBusManager.AddSMBus(smbus);
-                            }
-                        }
-
-                        any = true;
                     }
+
+                    any = true;
                 }
             }
 
