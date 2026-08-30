@@ -240,7 +240,7 @@ namespace ConsoleOutputTest
                 Log($"+++++ Unfortunately Linux does currently not support page change via PROC_CALL while SPD Write Protection is active. +++++");
             }
 
-            if (spd.UpdateTemperature())
+            if (spd.HasThermalSensor && spd.UpdateTemperature())
             {
                 Log($"Temperature read success.");
 
