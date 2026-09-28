@@ -88,6 +88,13 @@ namespace RAMSPDToolkit.SPD
         /// <returns>True if DDR4 is available at specified address; false otherwise.</returns>
         public static bool IsAvailable(SMBusInterface bus, byte address)
         {
+            //On DDR5 hubs offset 0x02 is the device revision, not the memory type.
+            //Its value can overlap the DDR4 memory type codes.
+            if (DDR5Accessor.HasHubDeviceType(bus, address))
+            {
+                return false;
+            }
+
             int value;
 
             //Select first page
