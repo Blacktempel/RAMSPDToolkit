@@ -133,7 +133,7 @@ namespace RAMSPDToolkit.I2CSMBus
                 if (item["Manufacturer"].IndexOf("Intel") != -1 ||
                     item["Manufacturer"].IndexOf("INTEL") != -1)
                 {
-                    var regex1 = new Regex($".+{pnpSignedDriver[0]["DeviceID"].Substring(4, 33)}.+");
+                    var regex1 = new Regex($".+{item["DeviceID"].Substring(4, 33)}.+");
 
                     var filters = new Dictionary<string, Regex>
                     {
