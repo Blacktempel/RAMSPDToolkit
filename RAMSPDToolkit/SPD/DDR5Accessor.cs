@@ -86,6 +86,12 @@ namespace RAMSPDToolkit.SPD
         /// <returns>True if DDR5 is available at specified address; false otherwise.</returns>
         public static bool IsAvailable(SMBusInterface bus, byte address)
         {
+            //Check device type before changing the page
+            if (!HasHubDeviceType(bus, address))
+            {
+                return false;
+            }
+
             //Read current page
             int status = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_MREG_VIRTUAL_PAGE, SPDConstants.SPD_DATA_RETRIES, out byte page);
 
@@ -129,13 +135,28 @@ namespace RAMSPDToolkit.SPD
                 }
             }
 
+            return true;
+        }
+
+        #endregion
+
+        #region Internal
+
+        /// <summary>
+        /// Detects if a DDR5 SPD Hub is available at specified address without changing the page.
+        /// </summary>
+        /// <param name="bus">SMBus to check for RAM.</param>
+        /// <param name="address">Address to check.</param>
+        /// <returns>True if a DDR5 SPD Hub is available at specified address; false otherwise.</returns>
+        internal static bool HasHubDeviceType(SMBusInterface bus, byte address)
+        {
             //Try read most significant byte
             //Result should be 0x51
             var result = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST, SPDConstants.SPD_DATA_RETRIES, out byte ddr5Magic);
 
             if (result < 0)
             {
-                LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to read {nameof(DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST)} due to error {result}.");
+                LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(HasHubDeviceType)} failed to read {nameof(DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST)} due to error {result}.");
             }
 
             //Try read least significant byte
@@ -144,7 +165,7 @@ namespace RAMSPDToolkit.SPD
 
             if (result < 0)
             {
-                LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to read {nameof(DDR5Constants.SPD_DDR5_DEVICE_TYPE_LEAST)} due to error {result}.");
+                LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(HasHubDeviceType)} failed to read {nameof(DDR5Constants.SPD_DDR5_DEVICE_TYPE_LEAST)} due to error {result}.");
             }
 
             //Is it a DDR5 module ?
