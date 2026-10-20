@@ -13,7 +13,6 @@ using BlackSharp.Core.Converters;
 using BlackSharp.Core.Extensions;
 using BlackSharp.Core.Logging;
 using RAMSPDToolkit.I2CSMBus;
-using RAMSPDToolkit.I2CSMBus.Interop.PawnIO;
 using RAMSPDToolkit.I2CSMBusTools;
 using RAMSPDToolkit.SPD;
 using RAMSPDToolkit.SPD.Interfaces;

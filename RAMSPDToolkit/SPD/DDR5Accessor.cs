@@ -12,7 +12,6 @@
 using BlackSharp.Core.BitOperations;
 using RAMSPDToolkit.I2CSMBus;
 using RAMSPDToolkit.I2CSMBus.Interop;
-using RAMSPDToolkit.I2CSMBus.Interop.Intel;
 using RAMSPDToolkit.Logging;
 using RAMSPDToolkit.SPD.Interop;
 using RAMSPDToolkit.SPD.Interop.Shared;
@@ -106,32 +105,9 @@ namespace RAMSPDToolkit.SPD
             //Page is off
             if (page != 0)
             {
-                //We can change the page normally
-                if (!bus.HasSPDWriteProtection)
+                if (!TrySelectPage(bus, address, 0))
                 {
-                    //Change page to 0
-                    status = bus.i2c_smbus_write_byte_data(address, DDR5Constants.SPD_DDR5_MREG_VIRTUAL_PAGE, 0);
-
-                    if (status < 0)
-                    {
-                        LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to change current page due to error {page}.");
-                        return false;
-                    }
-
-                    //Page change OK, continue
-                }
-                else //Write protection is active
-                {
-                    LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} page is off and {nameof(bus.HasSPDWriteProtection)} is active. Trying to change page via {nameof(IntelConstants.I801_PROC_CALL)}.");
-
-                    //Change page to 0
-                    status = bus.i2c_smbus_proc_call(address, I2CConstants.I2C_SMBUS_READ, DDR5Constants.SPD_DDR5_MREG_VIRTUAL_PAGE, 0);
-
-                    if (status < 0)
-                    {
-                        LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(IsAvailable)} failed to change current page due to error {page}.");
-                        return false;
-                    }
+                    return false;
                 }
             }
 
@@ -143,7 +119,8 @@ namespace RAMSPDToolkit.SPD
         #region Internal
 
         /// <summary>
-        /// Detects if a DDR5 SPD Hub is available at specified address without changing the page.
+        /// Detects if a DDR5 SPD Hub is available at specified address. A hidden hub identity
+        /// may require restoring page zero before the device type can be read.
         /// </summary>
         /// <param name="bus">SMBus to check for RAM.</param>
         /// <param name="address">Address to check.</param>
@@ -152,31 +129,96 @@ namespace RAMSPDToolkit.SPD
         {
             //Try read most significant byte
             //Result should be 0x51
-            var result = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST, SPDConstants.SPD_DATA_RETRIES, out byte ddr5Magic);
+            var mostStatus = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST, SPDConstants.SPD_DATA_RETRIES, out byte ddr5Magic);
 
-            if (result < 0)
+            if (mostStatus < 0)
             {
-                LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(HasHubDeviceType)} failed to read {nameof(DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST)} due to error {result}.");
+                LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(HasHubDeviceType)} failed to read {nameof(DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST)} due to error {mostStatus}.");
             }
 
             //Try read least significant byte
             //Result should be 0x18
-            result = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_DEVICE_TYPE_LEAST, SPDConstants.SPD_DATA_RETRIES, out byte ddr5Sensor);
+            var leastStatus = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_DEVICE_TYPE_LEAST, SPDConstants.SPD_DATA_RETRIES, out byte ddr5Sensor);
 
-            if (result < 0)
+            if (leastStatus < 0)
             {
-                LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(HasHubDeviceType)} failed to read {nameof(DDR5Constants.SPD_DDR5_DEVICE_TYPE_LEAST)} due to error {result}.");
+                LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(HasHubDeviceType)} failed to read {nameof(DDR5Constants.SPD_DDR5_DEVICE_TYPE_LEAST)} due to error {leastStatus}.");
             }
 
             //Is it a DDR5 module ?
-            if (ddr5Magic  == DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST_EXPECTED
+            if (mostStatus >= 0 && leastStatus >= 0
+             && ddr5Magic  == DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST_EXPECTED
              && ddr5Sensor == DDR5Constants.SPD_DDR5_DEVICE_TYPE_LEAST_EXPECTED)
             {
                 //We have a proper DDR5 + Thermal Sensor module
                 return true;
             }
 
-            //No proper DDR5 module
+            //An ordinary SPD EEPROM exposes its data at these offsets. A hidden DDR5 hub
+            //instead returns zero or an SMBus error for its volatile registers on some systems.
+            if ((mostStatus >= 0 && ddr5Magic != 0)
+             || (leastStatus >= 0 && ddr5Sensor != 0))
+            {
+                return false;
+            }
+
+            //Read the current page and retry the hub identity before changing page state.
+            var pageStatus = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_MREG_VIRTUAL_PAGE, SPDConstants.SPD_DATA_RETRIES, out byte selectedPage);
+
+            if (pageStatus < 0)
+            {
+                return false;
+            }
+
+            mostStatus  = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST , SPDConstants.SPD_DATA_RETRIES, out ddr5Magic );
+            leastStatus = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_DEVICE_TYPE_LEAST, SPDConstants.SPD_DATA_RETRIES, out ddr5Sensor);
+
+            if (mostStatus >= 0 && leastStatus >= 0
+             && ddr5Magic  == DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST_EXPECTED
+             && ddr5Sensor == DDR5Constants.SPD_DDR5_DEVICE_TYPE_LEAST_EXPECTED)
+            {
+                return true;
+            }
+
+            if ((mostStatus  >= 0 && ddr5Magic  != 0)
+             || (leastStatus >= 0 && ddr5Sensor != 0)
+             || (selectedPage & ~0x07) != 0
+             || (selectedPage &  0x07) == 0)
+            {
+                return false;
+            }
+
+            //Check more registers before writing MR11: offset 0x0B is EEPROM data on DDR4.
+            var revisionStatus    = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_DEVICE_REVISION, SPDConstants.SPD_DATA_RETRIES, out byte revision   );
+            var vendorMostStatus  = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_VENDOR_ID_MOST , SPDConstants.SPD_DATA_RETRIES, out byte vendorMost );
+            var vendorLeastStatus = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_VENDOR_ID_LEAST, SPDConstants.SPD_DATA_RETRIES, out byte vendorLeast);
+
+            if ((revisionStatus    >= 0 && revision    != 0)
+             || (vendorMostStatus  >= 0 && vendorMost  != 0)
+             || (vendorLeastStatus >= 0 && vendorLeast != 0))
+            {
+                return false;
+            }
+
+            if (!TrySelectPage(bus, address, 0))
+            {
+                return false;
+            }
+
+            mostStatus  = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST , SPDConstants.SPD_DATA_RETRIES, out ddr5Magic );
+            leastStatus = RetryReadByteData(bus, address, DDR5Constants.SPD_DDR5_DEVICE_TYPE_LEAST, SPDConstants.SPD_DATA_RETRIES, out ddr5Sensor);
+
+            if (mostStatus >= 0 && leastStatus >= 0
+             && ddr5Magic  == DDR5Constants.SPD_DDR5_DEVICE_TYPE_MOST_EXPECTED
+             && ddr5Sensor == DDR5Constants.SPD_DDR5_DEVICE_TYPE_LEAST_EXPECTED)
+            {
+                LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(HasHubDeviceType)} recovered hub identity from page {selectedPage}.");
+                return true;
+            }
+
+            //The identity did not confirm a hub; leave an unknown device on its original page.
+            TrySelectPage(bus, address, selectedPage);
+
             return false;
         }
 
@@ -398,6 +440,30 @@ namespace RAMSPDToolkit.SPD
                 ThermalSensorCriticalLowLimit = SPDTemperatureConverter.CheckAndConvertTemperature(wordTemp);
                 LogSimple.LogTrace($"{nameof(ThermalSensorCriticalLowLimit)} = {ThermalSensorCriticalLowLimit}.");
             }
+        }
+
+        static bool TrySelectPage(SMBusInterface bus, byte address, byte page)
+        {
+            int status;
+
+            if (bus.HasSPDWriteProtection)
+            {
+                status = bus.i2c_smbus_proc_call(address, I2CConstants.I2C_SMBUS_READ, DDR5Constants.SPD_DDR5_MREG_VIRTUAL_PAGE, page);
+            }
+            else
+            {
+                status = bus.i2c_smbus_write_byte_data(address, DDR5Constants.SPD_DDR5_MREG_VIRTUAL_PAGE, page);
+            }
+
+            if (status < 0)
+            {
+                LogSimple.LogTrace($"{nameof(DDR5Accessor)}.{nameof(TrySelectPage)} failed to select page {page} due to error {status}.");
+                return false;
+            }
+
+            Thread.Sleep(SPDConstants.SPD_IO_DELAY);
+
+            return true;
         }
 
         #endregion

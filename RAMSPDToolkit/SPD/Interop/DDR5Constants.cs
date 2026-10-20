@@ -15,6 +15,9 @@ namespace RAMSPDToolkit.SPD.Interop
     {
         public const byte SPD_DDR5_DEVICE_TYPE_MOST  = 0x0;
         public const byte SPD_DDR5_DEVICE_TYPE_LEAST = 0x1;
+        public const byte SPD_DDR5_DEVICE_REVISION   = 0x2;
+        public const byte SPD_DDR5_VENDOR_ID_MOST    = 0x3;
+        public const byte SPD_DDR5_VENDOR_ID_LEAST   = 0x4;
 
         public const byte SPD_DDR5_DEVICE_TYPE_MOST_EXPECTED  = 0x51;
         public const byte SPD_DDR5_DEVICE_TYPE_LEAST_EXPECTED = 0x18;
