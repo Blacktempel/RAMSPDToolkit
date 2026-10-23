@@ -1,4 +1,4 @@
-# RAMSPDToolkit
+﻿# RAMSPDToolkit
 [![GitHub license](https://img.shields.io/github/license/blacktempel/ramspdtoolkit?label=License)](https://github.com/blacktempel/ramspdtoolkit/blob/master/LICENSE)
 [![Build master](https://github.com/Blacktempel/RAMSPDToolkit/actions/workflows/master.yml/badge.svg)](https://github.com/Blacktempel/RAMSPDToolkit/actions/workflows/master.yml)
 [![Nuget](https://img.shields.io/nuget/v/RAMSPDToolkit?label=NuGet)](https://www.nuget.org/packages/RAMSPDToolkit/)
@@ -42,13 +42,21 @@ Pull requests are welcome. Please include as much information as possible.
 
 **Sample code**
 ```C#
+using BlackSharp.Core.Logging;
+using RAMSPDToolkit.Logging;
+
 static class Program
 {
     static void Main(string[] args)
     {
         //You can enable logging and set level, if you need logging output
-        Logger.Instance.IsEnabled = true;
-        Logger.Instance.LogLevel = LogLevel.Trace;
+        var logger = new Logger
+        {
+            IsEnabled = true,
+            LogLevel = LogLevel.Trace,
+        };
+
+        LogSimple.Logger = logger;
 
         //Check for Windows OS and load driver
         if (OperatingSystem.IsWindows())
@@ -103,7 +111,7 @@ static class Program
         }
 
         //Save log file to current directory, if you enabled logging output
-        Logger.Instance.SaveToFile("Log.txt", false);
+        logger.SaveToFile("Log.txt", false);
 
         //All done
         Console.WriteLine("Press enter to exit...");

@@ -13,6 +13,7 @@ using BlackSharp.Core.Extensions;
 using BlackSharp.Core.Logging;
 using ConsoleOutputTest;
 using ConsoleOutputTest.Exceptions;
+using RAMSPDToolkit.Logging;
 
 static class Program
 {
@@ -22,8 +23,13 @@ static class Program
         GlobalExceptionHandler.RegisterGlobalExceptionHandler();
 
         //Enable logging and set level
-        Logger.Instance.IsEnabled = true;
-        Logger.Instance.LogLevel = LogLevel.Trace;
+        var logger = new Logger
+        {
+            IsEnabled = true,
+            LogLevel = LogLevel.Trace,
+        };
+
+        LogSimple.Logger = logger;
 
         var tc = new TestClass();
 
@@ -38,11 +44,11 @@ static class Program
             var exceptionString = e.FullExceptionString();
             Console.WriteLine(exceptionString);
 
-            Logger.Instance.Add(LogLevel.Error, exceptionString, DateTime.Now);
+            logger.Add(LogLevel.Error, exceptionString, DateTime.Now);
         }
 
         //Save log file to current directory
-        Logger.Instance.SaveToFile("Log.txt", false);
+        logger.SaveToFile("Log.txt", false);
 
         //All done
         Console.WriteLine("Press enter to exit...");

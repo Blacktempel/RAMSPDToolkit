@@ -13,8 +13,21 @@ using BlackSharp.Core.Logging;
 
 namespace RAMSPDToolkit.Logging
 {
-    internal static class LogSimple
+    /// <summary>
+    /// Provides logging for RAMSPDToolkit diagnostics.
+    /// </summary>
+    public static class LogSimple
     {
+        #region Properties
+
+        /// <summary>
+        /// Gets or sets the logger that receives toolkit diagnostics.
+        /// Set to <see langword="null"/> to disable logging.
+        /// </summary>
+        public static ILogger Logger { get; set; }
+
+        #endregion
+
         #region Public
 
         public static void LogTrace(string message)
@@ -38,7 +51,7 @@ namespace RAMSPDToolkit.Logging
 
         static void Log(LogLevel logLevel, string message)
         {
-            Logger.Instance.Add(logLevel, message, DateTime.Now);
+            Logger?.Log(logLevel, nameof(RAMSPDToolkit), message, null);
         }
 
         #endregion

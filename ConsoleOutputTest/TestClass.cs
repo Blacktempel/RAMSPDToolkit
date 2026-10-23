@@ -14,6 +14,7 @@ using BlackSharp.Core.Extensions;
 using BlackSharp.Core.Logging;
 using RAMSPDToolkit.I2CSMBus;
 using RAMSPDToolkit.I2CSMBusTools;
+using RAMSPDToolkit.Logging;
 using RAMSPDToolkit.SPD;
 using RAMSPDToolkit.SPD.Interfaces;
 using RAMSPDToolkit.SPD.Interop.Shared;
@@ -32,13 +33,13 @@ namespace ConsoleOutputTest
         public static void Log()
         {
             //Console.WriteLine();
-            Logger.Instance.Add(LogLevel.Debug, string.Empty, DateTime.Now);
+            LogSimple.Logger?.Log(LogLevel.Debug, nameof(TestClass), string.Empty, null);
         }
 
         public static void Log(string message)
         {
             //Console.WriteLine(message);
-            Logger.Instance.Add(LogLevel.Debug, message, DateTime.Now);
+            LogSimple.Logger?.Log(LogLevel.Debug, nameof(TestClass), message, null);
         }
 
         public void DoTest()
